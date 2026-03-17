@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     """Application settings from environment variables."""
     
     # API
-    api_host: str = "0.0.0.0"
+    api_host: str = "127.0.0.1"
     api_port: int = 8000
     api_debug: bool = False
     

@@ -1,6 +1,6 @@
 """Initialize the database with tables from models."""
 from sqlalchemy import create_engine
-from backend.models import Base
+from models import Base
 import logging
 
 logging.basicConfig(level=logging.INFO)

@@ -1,7 +1,7 @@
 """Main application entry point."""
 import logging
 import asyncio
-from backend.api.main import create_app
+from api.main import create_app
 from utils.logger import setup_logging
 from utils.config import settings
 
