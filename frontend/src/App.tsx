@@ -1,11 +1,19 @@
-function App() {
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AppShell from './components/layout/AppShell';
+import DashboardPage from './pages/DashboardPage';
+import InventoryPage from './pages/InventoryPage';
+import POSPage from './pages/POSPage';
+
+export default function App() {
   return (
-    <>
-      <section id="center" className="text-blue-400">
-        This is OPTIMA your Product Pricing Optimizer
-      </section>
-    </>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route index             element={<DashboardPage />} />
+          <Route path="/pos"       element={<POSPage />}       />
+          <Route path="/inventory" element={<InventoryPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-export default App;
