@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: optima_db
+    environment:
+      POSTGRES_DB: optima
+      POSTGRES_USER: optima_user
+      POSTGRES_PASSWORD: optima_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U optima_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and Celery
+  redis:
+    image: redis:7-alpine
+    container_name: optima_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: optima_backend
+    environment:
+      DATABASE_URL: postgresql://optima_user:optima_password@postgres:5432/optima
+      REDIS_URL: redis://redis:6379
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend
+      - ./rl:/app/rl
+      - ./ml:/app/ml
+      - ./data:/app/data
+      - ./models:/app/models
+
+  # Frontend (dev server)
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: optima_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # Optional: Celery Worker for scheduled tasks
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: optima_celery
+    command: celery -A tasks worker --loglevel=info
+    environment:
+      DATABASE_URL: postgresql://optima_user:optima_password@postgres:5432/optima
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app/backend
+      - ./rl:/app/rl
+      - ./data:/app/data
+      - ./models:/app/models
+
+volumes:
+  postgres_data:
