@@ -322,3 +322,5 @@ def load_synthetic_data_into_db(db_url: str = "sqlite:///pricing.db"):
     session.close()
     logger.info("✅ Synthetic data loaded successfully!")
 
+generate_synthetic_sales()
+generate_synthetic_weather()
