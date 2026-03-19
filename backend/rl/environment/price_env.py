@@ -123,8 +123,11 @@ class PriceOptimizationEnv(gym.Env):
         """
         self.current_step += 1
         
-        # Extract price from action (it's an array)
-        new_price = float(action[0])
+        # Extract price from action (handle both scalar and array)
+        if isinstance(action, (list, tuple, np.ndarray)):
+            new_price = float(action[0]) if len(action) > 0 else float(action)
+        else:
+            new_price = float(action)
         new_price = np.clip(new_price, self.price_min, self.price_max)  # Enforce bounds
         
         # Build state dict for reward calculation

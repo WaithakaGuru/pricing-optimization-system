@@ -1,7 +1,7 @@
 """FastAPI application factory."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import prices_router, inventory_router, pos_router, agent_router
+from .routes import prices_router, inventory_router, pos_router, agent_router, dashboard_router
 import logging
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(inventory_router)
     app.include_router(pos_router)
     app.include_router(agent_router)
+    app.include_router(dashboard_router)
 
     @app.get("/health")
     async def health_check():

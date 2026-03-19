@@ -69,6 +69,30 @@ def test_trainer_basic():
     from rl.agents.ppo_agent import PPOAgent
     from rl.environment.price_env import PriceOptimizationEnv
     from rl.trainer import RLTrainer
+    from models import Product, InventoryItem
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import Session
+    
+    # Create test product in database
+    try:
+        engine = create_engine("sqlite:///pricing.db")
+        with Session(engine) as session:
+            # Check if SMOKE-TEST product exists
+            existing = session.query(Product).filter(Product.product_id == "SMOKE-TEST").first()
+            if not existing:
+                product = Product(
+                    product_id="SMOKE-TEST",
+                    name="Smoke Test Product",
+                    category="Test",
+                    base_price=10.0,
+                    min_price=5.0,
+                    max_price=50.0,
+                )
+                session.add(product)
+                session.commit()
+                logger.info("✓ Created test product in database")
+    except Exception as e:
+        logger.warning(f"Could not create test product: {e}")
     
     # Create minimal environment and agent
     env = PriceOptimizationEnv(product_id="SMOKE-TEST", max_steps=10)

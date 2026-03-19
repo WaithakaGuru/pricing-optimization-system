@@ -245,6 +245,10 @@ class PPOAgent:
                 # Actor update (policy gradient with PPO clipping)
                 action_pred = self.actor(batch_states)
                 
+                # Reshape batch_actions to match action_pred shape [batch, 1]
+                if batch_actions.dim() == 1:
+                    batch_actions = batch_actions.unsqueeze(-1)
+                
                 # Approximate log prob with MSE loss between actions
                 log_probs_new = -F.mse_loss(action_pred, batch_actions, reduction='none').mean(dim=1)
                 

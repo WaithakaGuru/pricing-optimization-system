@@ -1,0 +1,13 @@
+{
+  "episode_rewards": [
+    -9.286929008807686,
+    -8.507625123475265
+  ],
+  "episode_lengths": [
+    10,
+    10
+  ],
+  "best_reward": -Infinity,
+  "total_steps": 20,
+  "timestamp": "2026-03-19T09:24:30.904452"
+}
