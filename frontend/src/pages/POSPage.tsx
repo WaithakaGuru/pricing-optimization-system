@@ -1,16 +1,40 @@
-import { useState } from "react";
-import { MOCK_TRANSACTIONS, MOCK_PRODUCTS } from "../api/mock";
+import { useState, useEffect } from "react";
 import type { Product, Transaction } from "../types";
 import { useCartStore } from "../store";
 import ProductGrid from "../components/pos/ProductGrid";
 import CartPanel from "../components/pos/CartPanel";
+import { productsApi, posApi } from "../api/client";
 
 export default function POSPage() {
   const { items, addItem, removeItem, updateQty, clearCart, total } =
     useCartStore();
-  const [products] = useState<Product[]>(MOCK_PRODUCTS);
-  const [txns, setTxns] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [txns, setTxns] = useState<Transaction[]>([]);
   const [lastTxnId, setLastTxnId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch products and transactions on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const [productsData, transactionsData] = await Promise.all([
+          productsApi.list(),
+          posApi.transactions(30),
+        ]);
+        setProducts(productsData);
+        setTxns(transactionsData as Transaction[]);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch data");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const isToday = (ts: string) =>
     new Date(ts).toDateString() === new Date().toDateString();
@@ -34,6 +58,25 @@ export default function POSPage() {
     setLastTxnId(txn.id);
     clearCart();
     setTimeout(() => setLastTxnId(null), 5000);
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-2 max-w-350 bg-white items-center justify-center" style={{ height: "calc(100vh - 60px - 56px)" }}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--color-accent]"></div>
+        <span className="text-[--color-text-tertiary]">Loading products...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col gap-2 max-w-350 bg-white" style={{ height: "calc(100vh - 60px - 56px)", minHeight: "600px" }}>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <span className="text-red-700 text-sm font-medium">Error: {error}</span>
+        </div>
+      </div>
+    );
   }
 
   return (

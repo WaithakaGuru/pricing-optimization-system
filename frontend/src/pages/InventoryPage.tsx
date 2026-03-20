@@ -80,14 +80,14 @@ export default function InventoryPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-5 max-w-[1200px]">
+      <div className="flex flex-col gap-5 max-w-300">
         <LoadingSkeleton rows={6} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-[1200px]">
+    <div className="flex flex-col gap-5 max-w-300">
       {/* Error notice */}
       {error && (
         <ErrorNotice message={error} onRetry={() => window.location.reload()} />
@@ -101,7 +101,7 @@ export default function InventoryPage() {
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             <path
               d="M8 2L1 14h14L8 2z"
@@ -133,7 +133,7 @@ export default function InventoryPage() {
 
       {/* Controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-[200px] max-w-xs">
+        <div className="relative flex-1 min-w-50 max-w-xs">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 text-[--color-text-tertiary]"
             width="13"

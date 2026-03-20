@@ -113,7 +113,7 @@ export default function PricesPage() {
 
   if (loading && products.length === 0) {
     return (
-      <div className="flex flex-col gap-6 max-w-[1400px]">
+      <div className="flex flex-col gap-6 max-w-350">
         <div className="h-12 bg-[--color-surface-2] rounded-lg animate-pulse" />
         <div
           className="grid gap-4"
@@ -133,7 +133,7 @@ export default function PricesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1400px]">
+    <div className="flex flex-col gap-6 max-w-350">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-[--color-text-primary] mb-1">
@@ -152,7 +152,7 @@ export default function PricesPage() {
             height="16"
             viewBox="0 0 16 16"
             fill="none"
-            className="flex-shrink-0"
+            className="shrink-0"
           >
             <circle
               cx="8"
