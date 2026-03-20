@@ -147,7 +147,7 @@ export default function CartPanel({
         <button
           onClick={onCheckout}
           disabled={isEmpty}
-          className="w-full h-11 rounded-lg bg-[--color-accent] text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[--color-accent-hover] transition-colors mt-2 flex items-center justify-center gap-2"
+          className="w-full h-11 rounded-lg bg-[#2d3748] text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a202c] transition-colors mt-2 flex items-center justify-center gap-2"
         >
           <CheckmarkIcon /> Complete Transaction
         </button>

@@ -63,7 +63,7 @@ export default function ProductGrid({
             onClick={() => setCat(c)}
             className={`px-3 py-1 rounded-full border text-xs font-medium transition-all ${
               cat === c
-                ? "bg-[--color-accent] border-[--color-accent] text-white"
+                ? "bg-[#2d3748] border-[#2d3748] text-white"
                 : "bg-[--color-surface] border-[--color-border] text-[--color-text-secondary] hover:border-[--color-accent] hover:text-[--color-accent]"
             }`}
           >
@@ -74,7 +74,7 @@ export default function ProductGrid({
 
       {/* Grid */}
       <div
-        className="grid gap-2.5 overflow-y-auto flex-1 pb-1"
+        className="grid gap-2.5 overflow-y-auto flex-1 py-3"
         style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}
       >
         {filtered.map((p, i) => {
