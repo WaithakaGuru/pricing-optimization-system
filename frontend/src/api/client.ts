@@ -1,10 +1,16 @@
-import type { Product, PriceRecommendation, PriceHistory, InventoryItem, Transaction } from '../types';
+import type {
+  Product,
+  PriceRecommendation,
+  PriceHistory,
+  InventoryItem,
+  Transaction,
+} from "../types";
 
-const BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
+const BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 async function req<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     ...options,
   });
   if (!res.ok) {
@@ -15,26 +21,48 @@ async function req<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const pricesApi = {
-  recommend: (productId: string) => req<PriceRecommendation>(`/api/prices/recommend/${productId}`),
+  recommend: (productId: string) =>
+    req<PriceRecommendation>(`/api/prices/recommend/${productId}`),
   apply: (productId: string, price: number) =>
-    req<{ success: boolean }>('/api/prices/apply', { method: 'POST', body: JSON.stringify({ product_id: productId, price }) }),
-  history: (productId: string, days = 30) => req<PriceHistory[]>(`/api/prices/history/${productId}?days=${days}`),
+    req<{ success: boolean }>("/api/prices/apply", {
+      method: "POST",
+      body: JSON.stringify({ product_id: productId, price }),
+    }),
+  history: (productId: string, days = 30) =>
+    req<PriceHistory[]>(`/api/prices/history/${productId}?days=${days}`),
 };
 
 export const inventoryApi = {
-  list: () => req<InventoryItem[]>('/api/inventory/items'),
+  list: () => req<InventoryItem[]>("/api/inventory/items"),
   update: (productId: string, quantity: number) =>
-    req<InventoryItem>(`/api/inventory/items/${productId}`, { method: 'PUT', body: JSON.stringify({ quantity }) }),
-  alerts: () => req<InventoryItem[]>('/api/inventory/alerts'),
+    req<InventoryItem>(`/api/inventory/items/${productId}`, {
+      method: "PUT",
+      body: JSON.stringify({ quantity }),
+    }),
+  alerts: () => req<InventoryItem[]>("/api/inventory/alerts"),
 };
 
 export const posApi = {
-  record: (transaction: Omit<Transaction, 'id'>) =>
-    req<{ id: string; success: boolean }>('/api/pos/transaction', { method: 'POST', body: JSON.stringify(transaction) }),
-  transactions: (limit = 100) => req<Transaction[]>(`/api/pos/transactions?limit=${limit}`),
-  stats: () => req<any>('/api/pos/stats'),
+  record: (transaction: Omit<Transaction, "id">) =>
+    req<{ id: string; success: boolean }>("/api/pos/transaction", {
+      method: "POST",
+      body: JSON.stringify(transaction),
+    }),
+  transactions: (limit = 100) =>
+    req<Transaction[]>(`/api/pos/transactions?limit=${limit}`),
+  stats: () => req<any>("/api/pos/stats"),
 };
 
 export const productsApi = {
-  list: () => req<Product[]>('/api/products'),
+  list: () => req<Product[]>("/api/products"),
+};
+
+export const dashboardApi = {
+  summary: (days = 30) => req<any>(`/api/metrics/dashboard?days=${days}`),
+};
+
+export const analyticsApi = {
+  revenueData: (days = 30) => req<any[]>(`/api/analytics/revenue?days=${days}`),
+  categoryData: () => req<any[]>("/api/analytics/categories"),
+  recommendations: () => req<any[]>("/api/analytics/recommendations"),
 };
