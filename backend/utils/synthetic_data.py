@@ -255,7 +255,7 @@ def load_synthetic_data_into_db(db_url: str = "sqlite:///pricing.db"):
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from backend.models import Product, InventoryItem, Transaction
+    from models import Product, InventoryItem, Transaction
     
     engine = create_engine(db_url)
     Session = sessionmaker(bind=engine)
@@ -321,6 +321,3 @@ def load_synthetic_data_into_db(db_url: str = "sqlite:///pricing.db"):
     logger.info(f"Loaded {len(sales_df)} transactions")
     session.close()
     logger.info("✅ Synthetic data loaded successfully!")
-
-generate_synthetic_sales()
-generate_synthetic_weather()

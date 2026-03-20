@@ -1,10 +1,15 @@
 """SQLAlchemy ORM models for database."""
-from sqlalchemy import Column, String, Float, Integer, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, String, Float, Integer, DateTime, Boolean, ForeignKey, create_engine
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime
+from utils.config import settings
 
 Base = declarative_base()
+
+# Database engine and session factory
+engine = create_engine(settings.database_url, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 class Product(Base):
@@ -80,3 +85,8 @@ class AgentMetrics(Base):
     policy_loss = Column(Float, nullable=True)
     value_loss = Column(Float, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+def get_session():
+    """Get a new database session."""
+    return SessionLocal()
