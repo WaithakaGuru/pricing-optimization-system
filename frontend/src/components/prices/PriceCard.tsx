@@ -13,9 +13,13 @@ export default function PriceCard({
 }: PriceCardProps) {
   if (!recommendation) {
     return (
-      <div className="bg-[--color-surface] border border-[--color-border] rounded-xl p-5 animate-pulse">
-        <div className="h-4 bg-[--color-surface-2] rounded w-3/4 mb-3" />
-        <div className="h-10 bg-[--color-surface-2] rounded w-1/2" />
+      <div className="bg-[--color-surface] border border-[--color-border] rounded-xl p-5">
+        <div className="h-4 bg-[--color-surface-2] rounded w-3/4 mb-3 animate-pulse" />
+        <div className="h-10 bg-[--color-surface-2] rounded w-1/2 animate-pulse" />
+        <div className="mt-4 space-y-2">
+          <div className="h-3 bg-[--color-surface-2] rounded w-2/3 animate-pulse" />
+          <div className="h-3 bg-[--color-surface-2] rounded w-1/2 animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -30,15 +34,24 @@ export default function PriceCard({
       recommendation.recommended_price) *
     100;
 
+  if (!product) {
+    return (
+      <div className="bg-[--color-surface] border border-[--color-border] rounded-xl p-5">
+        <div className="h-4 bg-[--color-surface-2] rounded w-3/4 mb-3 animate-pulse" />
+        <div className="h-10 bg-[--color-surface-2] rounded w-1/2 animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[--color-surface] border border-[--color-border] rounded-xl p-5 hover:border-[--color-accent] transition-colors animate-fade-up">
       {/* Product name */}
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-[--color-text-primary] truncate leading-tight mb-1">
-          {product.name}
+          {product.name || "Unknown Product"}
         </h3>
         <p className="text-[11px] text-[--color-text-tertiary]">
-          ${product.cost_price.toFixed(2)} cost
+          ${(product.cost_price || 0).toFixed(2)} cost
         </p>
       </div>
 
@@ -48,11 +61,11 @@ export default function PriceCard({
           Current
         </span>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-[--color-text-primary]">
-            ${product.current_price.toFixed(2)}
+          <span className="text-2xl font-bold text-[--color-text-primary] font-mono">
+            ${(product.current_price || 0).toFixed(2)}
           </span>
           <span className="text-[11px] text-[--color-text-tertiary]">
-            {margin.toFixed(1)}% margin
+            {isNaN(margin) ? 0 : margin.toFixed(1)}% margin
           </span>
         </div>
       </div>
@@ -63,18 +76,18 @@ export default function PriceCard({
           Recommended
         </span>
         <div className="flex items-baseline gap-2 mb-2">
-          <span className="text-2xl font-bold text-[--color-accent]">
-            ${recommendation.recommended_price.toFixed(2)}
+          <span className="text-2xl font-bold text-[--color-accent] font-mono">
+            ${(recommendation?.recommended_price || 0).toFixed(2)}
           </span>
           <span
-            className={`text-xs font-bold font-mono ${diff >= 0 ? "text-[--color-success]" : "text-[--color-danger]"}`}
+            className={`text-xs font-bold font-mono ${isNaN(pctChange) || diff >= 0 ? "text-[--color-success]" : "text-[--color-danger]"}`}
           >
             {diff >= 0 ? "+" : ""}
-            {pctChange.toFixed(1)}%
+            {isNaN(pctChange) ? "0.0" : pctChange.toFixed(1)}%
           </span>
         </div>
         <span className="text-[11px] text-[--color-accent]">
-          {newMargin.toFixed(1)}% margin
+          {isNaN(newMargin) ? 0 : newMargin.toFixed(1)}% margin
         </span>
       </div>
 

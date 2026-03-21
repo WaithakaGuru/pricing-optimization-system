@@ -47,9 +47,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-360">
-      {/* KPI row */}
-      <div className="grid grid-cols-4 gap-4">
+    <div className="flex flex-col gap-4 md:gap-6 max-w-none px-0">
+      {/* KPI row - responsive grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           label="Revenue Today"
           value={`$${(metrics?.total_revenue || 0).toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
@@ -81,16 +81,24 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Charts row */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 320px" }}>
-        <RevenueChart />
-        <CategoryChart />
+      {/* Charts row - responsive */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4">
+        <div className="lg:col-span-2">
+          <RevenueChart />
+        </div>
+        <div className="lg:col-span-1">
+          <CategoryChart />
+        </div>
       </div>
 
-      {/* Bottom row */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 360px" }}>
-        <PriceRecommendations />
-        <RecentTransactions />
+      {/* Bottom row - responsive */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+        <div>
+          <PriceRecommendations />
+        </div>
+        <div>
+          <RecentTransactions />
+        </div>
       </div>
     </div>
   );

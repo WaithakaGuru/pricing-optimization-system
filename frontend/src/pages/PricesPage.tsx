@@ -133,13 +133,13 @@ export default function PricesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-350">
+    <div className="flex flex-col gap-4 md:gap-6 max-w-none px-0">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-[--color-text-primary] mb-1">
+        <h1 className="text-xl md:text-2xl font-bold text-[--color-text-primary] mb-1">
           AI Price Recommendations
         </h1>
-        <p className="text-sm text-[--color-text-tertiary]">
+        <p className="text-xs md:text-sm text-[--color-text-tertiary]">
           Optimize prices using ML agents
         </p>
       </div>
@@ -188,17 +188,14 @@ export default function PricesPage() {
         onSortByChange={setSortBy}
       />
 
-      {/* Products grid */}
+      {/* Products grid - responsive */}
       {sorted.length === 0 ? (
         <div className="flex items-center justify-center h-64 bg-[--color-surface] border border-[--color-border] rounded-xl text-[--color-text-tertiary]">
           <p>No products found</p>
         </div>
       ) : (
         <div
-          className="grid gap-4"
-          style={{
-            gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-          }}
+          className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {sorted.map((product) => (
             <PriceCard
@@ -209,7 +206,7 @@ export default function PricesPage() {
             />
           ))}
         </div>
-      )}
+      )}"
     </div>
   );
 }

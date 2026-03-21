@@ -21,8 +21,8 @@ export default function StatCard({
     <div
       className={`rounded-2xl border p-6 flex flex-col gap-2 animate-fade-up transition-shadow hover:shadow-md ${
         accent
-          ? "bg-[--color-accent] border-[--color-accent] text-red"
-          : "bg-[--color-surface] border-[--color-border] shadow-xs"
+          ? "bg-accent border-accent"
+          : "bg-surface border-border shadow-xs"
       }`}
       style={{ animationDelay: `${delay}ms` }}
     >
@@ -43,10 +43,10 @@ export default function StatCard({
           <span
             className={`text-xs font-medium px-2 py-0.5 rounded-full ${
               accent
-                ? "bg-white/20 text-grey-800"
+                ? "bg-white/20 text-white"
                 : isPositive
-                  ? "bg-[--color-success-light] text-[--color-success]"
-                  : "bg-[--color-danger-light] text-[--color-danger]"
+                  ? "bg-success-light text-success"
+                  : "bg-danger-light text-danger"
             }`}
           >
             {isPositive ? "▲" : "▼"} {Math.abs(change).toFixed(1)}%
@@ -54,7 +54,7 @@ export default function StatCard({
         )}
         {subtext && (
           <span
-            className={`text-xs ${accent ? "text-white/60" : "text-[--color-text-tertiary]"}`}
+            className={`text-xs ${accent ? "text-white/70" : "text-text-tertiary"}`}
           >
             {subtext}
           </span>

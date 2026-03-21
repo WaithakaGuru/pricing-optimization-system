@@ -17,6 +17,14 @@ export default function InventoryPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<InventoryItem | null>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Handle responsive layout
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     async function loadItems() {
@@ -48,7 +56,6 @@ export default function InventoryPage() {
       (i.product_name ?? "").toLowerCase().includes(search.toLowerCase())
     );
   });
-
   const counts = (
     ["all", "critical", "low", "ok", "overstock"] as Filter[]
   ).reduce(
@@ -80,14 +87,14 @@ export default function InventoryPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-5 max-w-300">
+      <div className="flex flex-col gap-5">
         <LoadingSkeleton rows={6} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-5 max-w-300">
+    <div className="flex flex-col gap-5">
       {/* Error notice */}
       {error && (
         <ErrorNotice message={error} onRetry={() => window.location.reload()} />
@@ -188,9 +195,8 @@ export default function InventoryPage() {
 
       {/* Table */}
       <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs overflow-hidden">
-        {/* thead */}
-        <div
-          className="grid px-6 py-2.5 bg-[--color-surface-2] border-b border-[--color-border] text-[10.5px] font-semibold uppercase tracking-widest text-[--color-text-tertiary] items-center"
+        {/* Desktop table header */}
+        <div className="hidden md:grid px-6 py-3 border-b border-[--color-border] text-xs font-semibold uppercase tracking-widest text-[--color-text-tertiary] gap-4"
           style={{ gridTemplateColumns: COL }}
         >
           <span>Product</span>
@@ -213,6 +219,51 @@ export default function InventoryPage() {
               "en-US",
               { month: "short", day: "numeric" },
             );
+
+            // Mobile card layout
+            if (isMobile) {
+              return (
+                <div
+                  key={item.id}
+                  className="border-b border-[--color-border] last:border-0 px-4 py-4 space-y-3 hover:bg-[--color-surface-2] transition-colors animate-fade-up"
+                  style={{ animationDelay: `${i * 30}ms` }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[--color-text-primary] truncate">
+                        {item.product_name}
+                      </p>
+                      <p className="text-[10px] text-[--color-text-tertiary] font-mono">
+                        {item.product_id}
+                      </p>
+                    </div>
+                    <StockBadge status={status} />
+                  </div>
+                  <StockBar qty={item.quantity} reorder={item.reorder_point} />
+                  <div className="flex justify-between text-xs">
+                    <div>
+                      <span className="text-[--color-text-tertiary]">Reorder: </span>
+                      <span className="text-[--color-text-secondary] font-mono">{item.reorder_point}</span>
+                    </div>
+                    <div>
+                      <span className="text-[--color-text-tertiary]">Qty: </span>
+                      <span className="text-[--color-text-secondary] font-mono">{item.reorder_quantity}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2 border-t border-[--color-border]">
+                    <span className="text-xs text-[--color-text-tertiary]">{updated}</span>
+                    <button
+                      onClick={() => setEditing(item)}
+                      className="text-xs font-medium px-3 py-1.5 rounded-md border border-[--color-border] text-[--color-text-secondary] bg-[--color-surface] hover:border-[--color-accent] hover:text-[--color-accent] hover:bg-[--color-accent-light] transition-all"
+                    >
+                      Adjust
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            // Desktop table layout
             return (
               <div
                 key={item.id}
@@ -261,7 +312,7 @@ export default function InventoryPage() {
         <span>
           Total units:{" "}
           <strong className="text-[--color-text-secondary] font-semibold">
-            {items.reduce((s, i) => s + i.quantity, 0).toLocaleString()}
+            {items.length > 0 ? items.reduce((s, i) => s + (i.quantity || 0), 0).toLocaleString() : "0"}
           </strong>
         </span>
       </div>
