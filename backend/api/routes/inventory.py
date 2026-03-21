@@ -13,10 +13,15 @@ router = APIRouter(prefix="/api/inventory", tags=["inventory"])
 
 class InventoryItem(BaseModel):
     """Inventory item schema."""
+    id: int
     product_id: str
     product_name: str
-    current_stock: int
+    quantity: int
     reorder_point: int
+    reorder_quantity: int
+    expiry_date: Optional[str] = None
+    warehouse_location: Optional[str] = None
+    updated_at: str
     status: str
     days_to_stockout: Optional[float] = None
 
@@ -56,26 +61,34 @@ async def list_inventory() -> List[InventoryItem]:
     Returns items with indicators for low stock, reorder alerts, etc.
     """
     try:
+        from models import InventoryItem as DBInventoryItem, Product
+        
         inventory_service = InventoryService()
         session = get_session()
         
-        # Get all products
-        products = session.query(Product).all()
-        session.close()
+        # Get all inventory items with their products
+        db_items = session.query(DBInventoryItem).all()
         
         items = []
-        for product in products:
+        for db_item in db_items:
+            product = db_item.product
             inv_data = inventory_service.get_inventory(product.id)
-            if inv_data:
-                items.append(InventoryItem(
-                    product_id=product.id,
-                    product_name=product.name,
-                    current_stock=inv_data["current_stock"],
-                    reorder_point=inv_data["reorder_point"],
-                    status=inv_data["status"],
-                    days_to_stockout=inv_data.get("days_to_stockout")
-                ))
+            
+            items.append(InventoryItem(
+                id=db_item.id,
+                product_id=product.id,
+                product_name=product.name,
+                quantity=db_item.quantity,
+                reorder_point=db_item.reorder_point,
+                reorder_quantity=db_item.reorder_quantity,
+                expiry_date=db_item.expiry_date.isoformat() if db_item.expiry_date else None,
+                warehouse_location=db_item.warehouse_location,
+                updated_at=db_item.updated_at.isoformat(),
+                status=inv_data.get("status", "normal") if inv_data else "normal",
+                days_to_stockout=inv_data.get("days_to_stockout") if inv_data else None
+            ))
         
+        session.close()
         logger.info(f"Retrieved {len(items)} inventory items")
         return items
         
@@ -94,27 +107,38 @@ async def get_inventory_item(product_id: str) -> InventoryItem:
     Returns current stock, reorder point, and status indicators.
     """
     try:
+        from models import InventoryItem as DBInventoryItem, Product
+        
         inventory_service = InventoryService()
         session = get_session()
         
-        product = session.query(Product).filter(Product.id == product_id).first()
-        session.close()
+        # Get inventory item for product
+        db_item = session.query(DBInventoryItem).filter(
+            DBInventoryItem.product_id == product_id
+        ).first()
         
-        if not product:
-            raise HTTPException(status_code=404, detail=f"Product {product_id} not found")
+        if not db_item:
+            session.close()
+            raise HTTPException(status_code=404, detail=f"Product {product_id} not found in inventory")
         
+        product = db_item.product
         inv_data = inventory_service.get_inventory(product_id)
-        if not inv_data:
-            raise HTTPException(status_code=500, detail="Could not retrieve inventory data")
         
+        session.close()
         logger.info(f"Retrieved inventory for {product_id}")
+        
         return InventoryItem(
+            id=db_item.id,
             product_id=product.id,
             product_name=product.name,
-            current_stock=inv_data["current_stock"],
-            reorder_point=inv_data["reorder_point"],
-            status=inv_data["status"],
-            days_to_stockout=inv_data.get("days_to_stockout")
+            quantity=db_item.quantity,
+            reorder_point=db_item.reorder_point,
+            reorder_quantity=db_item.reorder_quantity,
+            expiry_date=db_item.expiry_date.isoformat() if db_item.expiry_date else None,
+            warehouse_location=db_item.warehouse_location,
+            updated_at=db_item.updated_at.isoformat(),
+            status=inv_data.get("status", "normal") if inv_data else "normal",
+            days_to_stockout=inv_data.get("days_to_stockout") if inv_data else None
         )
         
     except HTTPException:

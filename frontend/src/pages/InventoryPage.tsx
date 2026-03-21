@@ -257,7 +257,7 @@ export default function InventoryPage() {
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <span className="text-xs text-text-tertiary">
-                      {updated}
+                      {updated || item.updated_at}
                     </span>
                     <button
                       onClick={() => setEditing(item)}

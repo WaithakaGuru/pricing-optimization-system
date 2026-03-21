@@ -136,7 +136,7 @@ export default function ProductGrid({
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <button
                   onClick={() => onAdd(p)}
-                  className="h-7 rounded bg-accent text-[#1a202c] text-xs font-semibold hover:opacity-90 transition-colors active:scale-95"
+                  className="h-7 rounded bg-accent text-border text-xs font-semibold hover:opacity-90 transition-colors active:scale-95"
                 >
                   Add to Cart
                 </button>
