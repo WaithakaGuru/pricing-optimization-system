@@ -29,7 +29,7 @@ export default function StockBar({ qty, reorder, max }: Props) {
           style={{ left: `${reorderPct}%`, transform: "translateX(-50%)" }}
         />
       </div>
-      <span className="text-xs text-text-secondary font-mono w-8 text-right shrink-0">
+      <span className="text-xs text-text-secondary font-mono w-8 shrink-0">
         {qty}
       </span>
     </div>

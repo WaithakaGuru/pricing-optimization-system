@@ -8,7 +8,7 @@ import AdjustModal from "../components/inventory/AdjustModal";
 
 type Filter = "all" | "critical" | "low" | "ok" | "overstock";
 
-const COL = "2.5fr 1fr 1.8fr 1fr 1fr 1fr 80px";
+const COL = "2.1fr 1fr 1.8fr 1.2fr 1fr 1fr 80px";
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
@@ -71,9 +71,9 @@ export default function InventoryPage() {
     {} as Record<Filter, number>,
   );
 
-  async function handleSave(productId: string, newQty: number) {
+  async function handleSave(productId: string, newQty: number, oldQty: number) {
     try {
-      const updated = await inventoryApi.update(productId, newQty);
+      const updated = await inventoryApi.update(productId, newQty, oldQty);
       setItems((prev) =>
         prev.map((i) => (i.product_id === productId ? updated : i)),
       );
@@ -243,13 +243,13 @@ export default function InventoryPage() {
                   <StockBar qty={item.quantity} reorder={item.reorder_point} />
                   <div className="flex justify-between text-xs">
                     <div>
-                      <span className="text-text-tertiary">Reorder: </span>
+                      <span className="text-text-tertiary">ReorderPt: </span>
                       <span className="text-text-secondary font-mono">
                         {item.reorder_point}
                       </span>
                     </div>
                     <div>
-                      <span className="text-text-tertiary">Qty: </span>
+                      <span className="text-text-tertiary">R-Qty: </span>
                       <span className="text-text-secondary font-mono">
                         {item.reorder_quantity}
                       </span>
@@ -257,7 +257,7 @@ export default function InventoryPage() {
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
                     <span className="text-xs text-text-tertiary">
-                      {updated || item.updated_at}
+                      {updated}
                     </span>
                     <button
                       onClick={() => setEditing(item)}
@@ -274,7 +274,7 @@ export default function InventoryPage() {
             return (
               <div
                 key={item.id}
-                className="grid items-center px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors animate-fade-up"
+                className="grid items-center px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors animate-fade-up space-x-1.5"
                 style={{
                   gridTemplateColumns: COL,
                   animationDelay: `${i * 30}ms`,
@@ -290,7 +290,7 @@ export default function InventoryPage() {
                 </div>
                 <StockBadge status={status} />
                 <StockBar qty={item.quantity} reorder={item.reorder_point} />
-                <span className="text-sm text-text-secondary font-mono">
+                <span className="text-sm text-text-secondary font-mono pl-4">
                   {item.reorder_point}
                 </span>
                 <span className="text-sm text-text-secondary font-mono">

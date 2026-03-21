@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import List, Optional
+from uuid import uuid4
 from services.pricing_service import PricingService
 from services.inventory_service import InventoryService
 from utils.logger import get_logger
@@ -78,24 +79,35 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
         pricing_service = PricingService(agent_type="ppo")
         inventory_service = InventoryService()
         
-        # Create transaction record
-        trans = Transaction(
-            total=transaction.total,
-            payment_method=transaction.payment_method,
-            notes=transaction.notes,
-            created_at=datetime.utcnow()
-        )
-        session.add(trans)
-        session.flush()  # Get transaction ID
-        transaction_id = trans.id
+        # Generate unique transaction ID BEFORE processing items
+        transaction_id = f"TXN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
+        recorded_items = []
         
         # Process each item
-        for item in transaction.items:
+        for idx, item in enumerate(transaction.items):
             # Verify product exists
             product = session.query(Product).filter(Product.id == item.product_id).first()
             if not product:
                 session.rollback()
+                session.close()
                 raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+            
+            # Create individual transaction record for each item
+            trans = Transaction(
+                id=transaction_id,  # Use pre-generated ID
+                product_id=item.product_id,
+                quantity=item.quantity,
+                price=item.price,
+                revenue=item.subtotal or (item.quantity * item.price),
+                total=item.subtotal or (item.quantity * item.price),
+                payment_method=transaction.payment_method,
+                notes=transaction.notes,
+                timestamp=datetime.utcnow()
+            )
+            session.add(trans)
+            session.flush()
+            
+            recorded_items.append(item)
             
             # Update inventory (negative quantity = sold)
             inventory_service.update_stock(
@@ -109,18 +121,18 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
                 product_id=item.product_id,
                 quantity=item.quantity,
                 price=item.price,
-                revenue=item.subtotal
+                revenue=item.subtotal or (item.quantity * item.price)
             )
             
-            logger.info(f"  Item: {item.product_id} x{item.quantity} @ ${item.price} = ${item.subtotal}")
+            logger.info(f"  Item: {item.product_id} x{item.quantity} @ ${item.price} = ${item.subtotal or (item.quantity * item.price)}")
         
         session.commit()
         session.close()
         
-        logger.info(f"✓ Transaction {transaction_id} recorded successfully")
+        logger.info(f"✓ Transaction {transaction_id} recorded successfully with {len(recorded_items)} items")
         return TransactionResponse(
             transaction_id=str(transaction_id),
-            items=transaction.items,
+            items=recorded_items,
             total=transaction.total,
             timestamp=datetime.utcnow().isoformat(),
             status="completed"
@@ -138,13 +150,13 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
 @router.get("/transactions", response_model=List[TransactionHistory])
 async def get_transactions(
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of transactions"),
-    days: int = Query(30, ge=1, le=365, description="Days of history to retrieve")
+    days: int = Query(365, ge=1, le=365, description="Days of history to retrieve")
 ) -> List[TransactionHistory]:
     """
     Get recent transactions with full details.
     
     - **limit**: Maximum number of transactions to return
-    - **days**: Number of days of history to retrieve
+    - **days**: Number of days of history to retrieve (default 365 = all)
     
     Returns most recent transactions in reverse chronological order with item details.
     """
@@ -155,30 +167,35 @@ async def get_transactions(
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        # Query transactions with product details
-        transactions = session.query(Transaction).join(Product).filter(
+        # Query transactions - order by timestamp DESC to get latest first
+        # Don't use join in case product is deleted but transaction still exists
+        transactions = session.query(Transaction).filter(
             Transaction.timestamp >= start_date,
             Transaction.timestamp <= end_date
         ).order_by(Transaction.timestamp.desc()).limit(limit).all()
         
         result = []
         for t in transactions:
+            # Try to get product name, fall back to generic if not found
+            product_name = t.product_id
             product = session.query(Product).filter(Product.id == t.product_id).first()
             if product:
-                item = TransactionItem(
-                    product_id=t.product_id,
-                    product_name=product.name,
-                    quantity=t.quantity,
-                    price=t.price,
-                    subtotal=t.revenue
-                )
-                result.append(TransactionHistory(
-                    id=str(t.id),
-                    items=[item],
-                    total=t.total,
-                    timestamp=t.timestamp.isoformat(),
-                    payment_method=getattr(t, 'payment_method', 'cash')
-                ))
+                product_name = product.name
+            
+            item = TransactionItem(
+                product_id=t.product_id,
+                product_name=product_name,
+                quantity=t.quantity,
+                price=t.price,
+                subtotal=t.revenue or t.total
+            )
+            result.append(TransactionHistory(
+                id=str(t.id),
+                items=[item],
+                total=t.total,
+                timestamp=t.timestamp.isoformat(),
+                payment_method=getattr(t, 'payment_method', 'cash')
+            ))
         
         session.close()
         logger.info(f"Retrieved {len(result)} transactions")

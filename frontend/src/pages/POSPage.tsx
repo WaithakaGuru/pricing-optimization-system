@@ -14,7 +14,7 @@ export default function POSPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch products and transactions on mount
+  // Fetch products and transactions on mount + auto-refresh
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -22,10 +22,15 @@ export default function POSPage() {
         setError(null);
         const [productsData, transactionsData] = await Promise.all([
           productsApi.list(),
-          posApi.transactions(30),
+          posApi.transactions(100), // Fetch more recent transactions
         ]);
         setProducts(productsData);
-        setTxns(transactionsData as Transaction[]);
+        // Sort by timestamp descending (newest first)
+        const sorted = (transactionsData as Transaction[]).sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        );
+        setTxns(sorted);
       } catch (err) {
         console.error("Error fetching data:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch data");
@@ -33,7 +38,10 @@ export default function POSPage() {
         setLoading(false);
       }
     };
+
     fetchData();
+    // No auto-refresh - only refresh on new transactions
+    return () => {};
   }, []);
 
   const isToday = (ts: string) =>
@@ -41,23 +49,67 @@ export default function POSPage() {
   const todayTxns = txns.filter((t) => isToday(t.timestamp));
   const todayRevenue = todayTxns.reduce((s, t) => s + t.total, 0);
 
-  function handleCheckout() {
+  // Group transactions by date
+  const groupedTxns = txns.reduce(
+    (acc, t) => {
+      const date = new Date(t.timestamp).toDateString();
+      if (!acc[date]) {
+        acc[date] = [];
+      }
+      acc[date].push(t);
+      return acc;
+    },
+    {} as Record<string, typeof txns>,
+  );
+
+  // Sort date keys with today first
+  const sortedDates = Object.keys(groupedTxns).sort((a, b) => {
+    const aIsToday = new Date(a).toDateString() === new Date().toDateString();
+    const bIsToday = new Date(b).toDateString() === new Date().toDateString();
+    if (aIsToday) return -1;
+    if (bIsToday) return 1;
+    return new Date(b).getTime() - new Date(a).getTime();
+  });
+
+  async function handleCheckout() {
     if (items.length === 0) return;
-    const txn: Transaction = {
-      id: `TXN-${Date.now()}`,
-      items: items.map((i) => ({
-        product_id: i.product_id,
-        product_name: i.product_name,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-      total: total(),
-      timestamp: new Date().toISOString(),
-    };
-    setTxns((prev) => [txn, ...prev]);
-    setLastTxnId(txn.id);
-    clearCart();
-    setTimeout(() => setLastTxnId(null), 5000);
+
+    try {
+      // Build transaction in the format the API expects
+      const transaction = {
+        items: items.map((i) => ({
+          product_id: i.product_id,
+          product_name: i.product_name,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+        total: total(),
+        timestamp: new Date().toISOString(),
+        payment_method: "cash" as const,
+        notes: "",
+      };
+
+      // Record transaction to database
+      const result = await posApi.record(transaction);
+      setLastTxnId(result.id);
+      clearCart();
+
+      // Refresh transaction list immediately after recording (event-driven, not polling)
+      const transactionsData = await posApi.transactions(100);
+      const sorted = (transactionsData as Transaction[]).sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+      setTxns(sorted);
+
+      // Clear the highlight after 5 seconds
+      setTimeout(() => setLastTxnId(null), 5000);
+    } catch (err) {
+      console.error("Error recording transaction:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to record transaction",
+      );
+    }
   }
 
   if (loading) {
@@ -185,32 +237,61 @@ export default function POSPage() {
           </div>
           {/* Log body - scrollable */}
           <div className="overflow-y-auto flex-1 h-100">
-            {txns.slice(0, 8).map((t, i) => (
-              <div
-                key={t.id}
-                className="grid items-center px-5 py-2.5 border-b border-border last:border-0 hover:bg-surface-2] transition-colors text-xs animate-fade-up"
-                style={{
-                  gridTemplateColumns: "140px 1fr 90px 70px",
-                  animationDelay: `${i * 25}ms`,
-                }}
-              >
-                <span className="font-mono text-accent">{t.id}</span>
-                <span className="text-text-secondary truncate pr-4">
-                  {t.items
-                    .map((i) => `${i.product_name} ×${i.quantity}`)
-                    .join(", ")}
-                </span>
-                <span className="font-semibold text-text-primary font-mono">
-                  ${t.total.toFixed(2)}
-                </span>
-                <span className="text-text-tertiary">
-                  {new Date(t.timestamp).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
+            {txns.length === 0 ? (
+              <div className="px-5 py-8 text-center text-text-tertiary">
+                <p className="text-sm">No transactions yet</p>
               </div>
-            ))}
+            ) : (
+              sortedDates.map((dateStr, dateIdx) => {
+                const dateObj = new Date(dateStr);
+                const isCurrentDay = dateStr === new Date().toDateString();
+                const dateLabel = isCurrentDay
+                  ? "Today"
+                  : dateObj.toLocaleDateString("en-US", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    });
+
+                return (
+                  <div key={dateStr}>
+                    {/* Date marker */}
+                    <div className="sticky top-0 bg-surface-2] border-t border-b border-border px-5 py-2 z-10">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                        {dateLabel}
+                      </span>
+                    </div>
+                    {/* Transactions for this date */}
+                    {groupedTxns[dateStr].map((t, txnIdx) => (
+                      <div
+                        key={t.id}
+                        className="grid items-center px-5 py-2.5 border-b border-border last:border-0 hover:bg-surface-2] transition-colors text-xs animate-fade-up"
+                        style={{
+                          gridTemplateColumns: "140px 1fr 90px 70px",
+                          animationDelay: `${dateIdx * 50 + txnIdx * 25}ms`,
+                        }}
+                      >
+                        <span className="font-mono text-accent">{t.id}</span>
+                        <span className="text-text-secondary truncate pr-4">
+                          {t.items
+                            .map((i) => `${i.product_name} ×${i.quantity}`)
+                            .join(", ")}
+                        </span>
+                        <span className="font-semibold text-text-primary font-mono">
+                          ${t.total.toFixed(2)}
+                        </span>
+                        <span className="text-text-tertiary">
+                          {new Date(t.timestamp).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

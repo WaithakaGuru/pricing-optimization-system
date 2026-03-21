@@ -37,7 +37,7 @@ export default function StockBadge({ status }: { status: StockStatus }) {
   const { label, classes, dot } = CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-xs font-medium px-1.5 py-1 rounded-full ${classes} mr-2`}
+      className={`inline-flex items-center text-xs font-medium px-1.5 py-1 rounded-full ${classes} mr-6`}
     >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
       {label}

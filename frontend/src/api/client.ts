@@ -34,10 +34,13 @@ export const pricesApi = {
 
 export const inventoryApi = {
   list: () => req<InventoryItem[]>("/api/inventory/items"),
-  update: (productId: string, quantity: number) =>
+  update: (productId: string, newQuantity: number, oldQuantity: number) =>
     req<InventoryItem>(`/api/inventory/items/${productId}`, {
       method: "PUT",
-      body: JSON.stringify({ quantity }),
+      body: JSON.stringify({
+        quantity_change: newQuantity - oldQuantity,
+        reason: "adjustment",
+      }),
     }),
   alerts: () => req<InventoryItem[]>("/api/inventory/alerts"),
 };
