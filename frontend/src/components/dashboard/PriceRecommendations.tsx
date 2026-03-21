@@ -8,19 +8,19 @@ export default function PriceRecommendations() {
   }));
 
   return (
-    <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs overflow-hidden">
-      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-[--color-border]">
-        <h2 className="text-sm font-semibold text-[--color-text-primary]">
+    <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden">
+      <div className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
+        <h2 className="text-sm font-semibold text-text-primary">
           AI Price Recommendations
         </h2>
-        <span className="text-[10.5px] font-semibold text-[--color-success] bg-[--color-success-light] px-2 py-0.5 rounded-full tracking-wide">
+        <span className="text-[10.5px] font-semibold text-success bg-success-light px-2 py-0.5 rounded-full tracking-wide">
           Live
         </span>
       </div>
 
       {/* Header row */}
       <div
-        className="grid px-6 py-2 border-b border-[--color-border] bg-[--color-surface-2] text-[11px] font-semibold uppercase tracking-widest text-[--color-text-tertiary]"
+        className="grid px-6 py-2 border-b border-border bg-surface-2 text-[11px] font-semibold uppercase tracking-widest text-text-tertiary"
         style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1.2fr 80px" }}
       >
         <span>Product</span>
@@ -37,23 +37,23 @@ export default function PriceRecommendations() {
         return (
           <div
             key={r.id}
-            className="grid items-center px-6 py-3 border-b border-[--color-border] last:border-0 hover:bg-[--color-surface-2] transition-colors animate-fade-up"
+            className="grid items-center px-6 py-3 border-b border-border last:border-0 hover:bg-surface transition-colors animate-fade-up"
             style={{
               gridTemplateColumns: "2fr 1fr 1fr 1fr 1.2fr 80px",
               animationDelay: `${i * 40}ms`,
             }}
           >
-            <span className="text-[13.5px] text-[--color-text-primary] truncate pr-4">
+            <span className="text-[13.5px] text-text-primary truncate pr-4">
               {r.name}
             </span>
-            <span className="text-sm text-[--color-text-secondary] font-mono">
+            <span className="text-sm text-text-secondary font-mono">
               ${r.current_price.toFixed(2)}
             </span>
-            <span className="text-sm text-[--color-text-secondary] font-mono">
+            <span className="text-sm text-text-secondary font-mono">
               ${r.recommended.toFixed(2)}
             </span>
             <span
-              className={`text-xs font-semibold font-mono ${diff >= 0 ? "text-[--color-success]" : "text-[--color-danger]"}`}
+              className={`text-xs font-semibold font-mono ${diff >= 0 ? "text-success" : "text-danger"}`}
             >
               {diff >= 0 ? "+" : ""}
               {pct.toFixed(1)}%
@@ -69,7 +69,7 @@ export default function PriceRecommendations() {
                 {(r.confidence * 100).toFixed(0)}%
               </span>
             </div>
-            <button className="text-xs font-medium text-[--color-accent] border border-[--color-accent] px-3 py-1.5 rounded hover:bg-[--color-accent] hover:text-white transition-colors">
+            <button className="text-xs font-medium text-accent border border-accent px-3 py-1.5 rounded hover:bg-accent hover:text-white transition-colors">
               Apply
             </button>
           </div>

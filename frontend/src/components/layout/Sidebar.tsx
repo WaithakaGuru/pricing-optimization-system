@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import React from "react";
 
 const NAV = [
@@ -20,7 +20,6 @@ const NAV = [
 ];
 
 export default function Sidebar() {
-  // const { pathname } = useLocation();
   const [isOpen, setIsOpen] = React.useState(false);
 
   return (

@@ -6,23 +6,23 @@ const CONFIG: Record<
 > = {
   ok: {
     label: "In Stock",
-    classes: "bg-success-light text-success]",
+    classes: "bg-success-light text-success",
     dot: "bg-success]",
   },
   low: {
     label: "Low Stock",
-    classes: "bg-warning-light text-warning]",
+    classes: "bg-warning-light text-warning",
     dot: "bg-warning]",
   },
   critical: {
     label: "Critical",
-    classes: "bg-danger-light text-danger]",
-    dot: "bg-danger]",
+    classes: "bg-danger-light text-danger",
+    dot: "bg-danger",
   },
   overstock: {
     label: "Overstock",
-    classes: "bg-accent-light text-accent]",
-    dot: "bg-accent]",
+    classes: "bg-accent-light text-accent",
+    dot: "bg-accent",
   },
 };
 
@@ -37,7 +37,7 @@ export default function StockBadge({ status }: { status: StockStatus }) {
   const { label, classes, dot } = CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${classes}`}
+      className={`inline-flex items-center gap-1.5 text-xs font-medium px-1.5 py-1 rounded-full ${classes} mr-2`}
     >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dot}`} />
       {label}

@@ -102,7 +102,7 @@ export default function InventoryPage() {
 
       {/* Alert banner */}
       {alerts.length > 0 && (
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-[--color-warning-light] border border-amber-200 rounded-xl text-[--color-warning] text-sm animate-fade-up">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-warning-light border border-amber-200 rounded-xl text-warning text-sm animate-fade-up">
           <svg
             width="16"
             height="16"
@@ -142,7 +142,7 @@ export default function InventoryPage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 min-w-50 max-w-xs">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[--color-text-tertiary]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             width="13"
             height="13"
             viewBox="0 0 16 16"
@@ -166,7 +166,7 @@ export default function InventoryPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search products…"
-            className="w-full h-9 pl-8 pr-3 border border-[--color-border] rounded-md bg-[--color-surface] text-sm text-[--color-text-primary] placeholder:text-[--color-text-tertiary] outline-none focus:border-[--color-accent] transition-colors"
+            className="w-full h-9 pl-8 pr-3 border border-border rounded-md bg-surface text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
           />
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -177,13 +177,13 @@ export default function InventoryPage() {
                 onClick={() => setFilter(f)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
                   filter === f
-                    ? "bg-[--color-accent-light] border-[--color-accent] text-[--color-accent]"
-                    : "bg-[--color-surface] border-[--color-border] text-[--color-text-secondary] hover:border-[--color-accent] hover:text-[--color-accent]"
+                    ? "bg-accent-light] border-accent] text-accent"
+                    : "bg-surface border-border text-text-secondary hover:border-accent hover:text-accent"
                 }`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-[--color-accent]/15 text-[--color-accent]" : "bg-[--color-surface-2] text-[--color-text-tertiary]"}`}
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-accent/15 text-accent" : "bg-surface-2 text-text-tertiary"}`}
                 >
                   {counts[f]}
                 </span>
@@ -194,10 +194,10 @@ export default function InventoryPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden">
         {/* Desktop table header */}
         <div
-          className="hidden md:grid px-6 py-3 border-b border-[--color-border] text-xs font-semibold uppercase tracking-widest text-[--color-text-tertiary] gap-4"
+          className="hidden md:grid px-6 py-3 border-b border-border text-xs font-semibold uppercase tracking-widest text-text-tertiary gap-4"
           style={{ gridTemplateColumns: COL }}
         >
           <span>Product</span>
@@ -210,7 +210,7 @@ export default function InventoryPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <p className="text-center text-sm text-[--color-text-tertiary] py-10">
+          <p className="text-center text-sm text-text-tertiary py-10">
             No items match your filter.
           </p>
         ) : (
@@ -226,15 +226,15 @@ export default function InventoryPage() {
               return (
                 <div
                   key={item.id}
-                  className="border-b border-[--color-border] last:border-0 px-4 py-4 space-y-3 hover:bg-[--color-surface-2] transition-colors animate-fade-up"
+                  className="border-b border-border last:border-0 px-4 py-4 space-y-3 hover:bg-surface-2 transition-colors animate-fade-up"
                   style={{ animationDelay: `${i * 30}ms` }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-[--color-text-primary] truncate">
+                      <p className="text-sm font-medium text-text-primary truncate">
                         {item.product_name}
                       </p>
-                      <p className="text-[10px] text-[--color-text-tertiary] font-mono">
+                      <p className="text-[10px] text-text-tertiary font-mono">
                         {item.product_id}
                       </p>
                     </div>
@@ -243,29 +243,25 @@ export default function InventoryPage() {
                   <StockBar qty={item.quantity} reorder={item.reorder_point} />
                   <div className="flex justify-between text-xs">
                     <div>
-                      <span className="text-[--color-text-tertiary]">
-                        Reorder:{" "}
-                      </span>
-                      <span className="text-[--color-text-secondary] font-mono">
+                      <span className="text-text-tertiary">Reorder: </span>
+                      <span className="text-text-secondary font-mono">
                         {item.reorder_point}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[--color-text-tertiary]">
-                        Qty:{" "}
-                      </span>
-                      <span className="text-[--color-text-secondary] font-mono">
+                      <span className="text-text-tertiary">Qty: </span>
+                      <span className="text-text-secondary font-mono">
                         {item.reorder_quantity}
                       </span>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-[--color-border]">
-                    <span className="text-xs text-[--color-text-tertiary]">
+                  <div className="flex items-center justify-between pt-2 border-t border-border">
+                    <span className="text-xs text-text-tertiary]">
                       {updated}
                     </span>
                     <button
                       onClick={() => setEditing(item)}
-                      className="text-xs font-medium px-3 py-1.5 rounded-md border border-[--color-border] text-[--color-text-secondary] bg-[--color-surface] hover:border-[--color-accent] hover:text-[--color-accent] hover:bg-[--color-accent-light] transition-all"
+                      className="text-xs font-medium px-3 py-1.5 rounded-md border border-border text-text-secondary bg-surface hover:border-accent hover:text-accent hover:bg-accent-light transition-all"
                     >
                       Adjust
                     </button>
@@ -278,34 +274,32 @@ export default function InventoryPage() {
             return (
               <div
                 key={item.id}
-                className="grid items-center px-6 py-3.5 border-b border-[--color-border] last:border-0 hover:bg-[--color-surface-2] transition-colors animate-fade-up"
+                className="grid items-center px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors animate-fade-up"
                 style={{
                   gridTemplateColumns: COL,
                   animationDelay: `${i * 30}ms`,
                 }}
               >
                 <div className="min-w-0 pr-4">
-                  <p className="text-sm font-medium text-[--color-text-primary] truncate">
+                  <p className="text-sm font-medium text-text-primary truncate">
                     {item.product_name}
                   </p>
-                  <p className="text-[10.5px] text-[--color-text-tertiary] font-mono">
+                  <p className="text-[10.5px] text-text-tertiary font-mono">
                     {item.product_id}
                   </p>
                 </div>
                 <StockBadge status={status} />
                 <StockBar qty={item.quantity} reorder={item.reorder_point} />
-                <span className="text-sm text-[--color-text-secondary] font-mono">
+                <span className="text-sm text-text-secondary font-mono">
                   {item.reorder_point}
                 </span>
-                <span className="text-sm text-[--color-text-secondary] font-mono">
+                <span className="text-sm text-text-secondary font-mono">
                   {item.reorder_quantity}
                 </span>
-                <span className="text-xs text-[--color-text-tertiary]">
-                  {updated}
-                </span>
+                <span className="text-xs text-text-tertiary">{updated}</span>
                 <button
                   onClick={() => setEditing(item)}
-                  className="text-xs font-medium px-3 py-1.5 rounded-md border border-[--color-border] text-[--color-text-secondary] bg-[--color-surface] hover:border-[--color-accent] hover:text-[--color-accent] hover:bg-[--color-accent-light] transition-all"
+                  className="text-xs font-medium px-3 py-1.5 rounded-md border border-border text-text-secondary bg-surface hover:border-accent hover:text-accent hover:bg-accent-light transition-all"
                 >
                   Adjust
                 </button>
@@ -316,13 +310,13 @@ export default function InventoryPage() {
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between text-xs text-[--color-text-tertiary] px-1">
+      <div className="flex justify-between text-xs text-text-tertiary px-1">
         <span>
           {filtered.length} of {items.length} products
         </span>
         <span>
           Total units:{" "}
-          <strong className="text-[--color-text-secondary] font-semibold">
+          <strong className="text-text-secondary font-semibold">
             {items.length > 0
               ? items
                   .reduce((s, i) => s + (i.quantity || 0), 0)
