@@ -33,7 +33,7 @@ export default function ProductGrid({
       {/* Search */}
       <div className="relative">
         <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 text-[--color-text-tertiary]"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
           width="13"
           height="13"
           viewBox="0 0 16 16"
@@ -51,7 +51,7 @@ export default function ProductGrid({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products…"
-          className="w-full h-10 pl-8 pr-3 border border-[--color-border] rounded-lg bg-[--color-surface] text-sm text-[--color-text-primary] placeholder:text-[--color-text-tertiary] outline-none focus:border-[--color-accent] transition-colors"
+          className="w-full h-10 pl-8 pr-3 border border-border rounded-lg bg-surface] text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
         />
       </div>
 
@@ -64,7 +64,7 @@ export default function ProductGrid({
             className={`px-3 py-1 rounded-full border text-xs font-medium transition-all ${
               cat === c
                 ? "bg-[#2d3748] border-[#2d3748] text-white"
-                : "bg-[--color-surface] border-[--color-border] text-[--color-text-secondary] hover:border-[--color-accent] hover:text-[--color-accent]"
+                : "bg-surface] border-border text-text-secondary hover:border-accent hover:text-accent"
             }`}
           >
             {c}
@@ -82,7 +82,7 @@ export default function ProductGrid({
           return (
             <div
               key={p.id}
-              className={`bg-[--color-surface] border-[1.5px] border-[--color-border] rounded-xl p-3.5 flex flex-col gap-2 text-left transition-all duration-200 hover:border-[--color-accent] ${isExpanded ? "shadow-lg" : "hover:shadow-md hover:-translate-y-px"} animate-fade-up`}
+              className={`bg-surface] border-[1.5px] border-border rounded-xl p-3.5 flex flex-col gap-2 text-left transition-all duration-200 hover:border-accent ${isExpanded ? "shadow-lg" : "hover:shadow-md hover:-translate-y-px"} animate-fade-up`}
               style={{ animationDelay: `${i * 30}ms` }}
             >
               {/* Product Header */}
@@ -91,33 +91,29 @@ export default function ProductGrid({
                   <span className="text-3xl leading-none block mb-1">
                     {getEmoji(p.name)}
                   </span>
-                  <span className="text-xs font-medium text-[--color-text-primary] leading-snug">
+                  <span className="text-xs font-medium text-text-primary leading-snug">
                     {p.name}
                   </span>
                 </div>
               </div>
 
               {/* Price */}
-              <span className="text-sm font-semibold text-[--color-accent] font-mono">
+              <span className="text-sm font-semibold text-accent font-mono">
                 ${p.current_price.toFixed(2)}
               </span>
 
               {/* Expanded Details */}
               {isExpanded && (
-                <div className="mt-2 pt-3 border-t border-[--color-border] space-y-2 animate-fade-up">
+                <div className="mt-2 pt-3 border-t border-border space-y-2 animate-fade-up">
                   <div className="space-y-1.5">
                     <div className="flex justify-between text-xs">
-                      <span className="text-[--color-text-tertiary]">
-                        Cost:
-                      </span>
-                      <span className="font-mono text-[--color-text-primary]">
+                      <span className="text-text-tertiary">Cost:</span>
+                      <span className="font-mono text-text-primary">
                         ${p.cost_price.toFixed(2)}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-[--color-text-tertiary]">
-                        Margin:
-                      </span>
+                      <span className="text-text-tertiary">Margin:</span>
                       <span className="font-mono text-green-600">
                         {(
                           ((p.current_price - p.cost_price) / p.cost_price) *
@@ -127,10 +123,8 @@ export default function ProductGrid({
                       </span>
                     </div>
                     <div className="flex justify-between text-xs">
-                      <span className="text-[--color-text-tertiary]">
-                        Price Range:
-                      </span>
-                      <span className="font-mono text-[--color-text-primary]">
+                      <span className="text-text-tertiary">Price Range:</span>
+                      <span className="font-mono text-text-primary">
                         ${p.min_price.toFixed(2)} - ${p.max_price.toFixed(2)}
                       </span>
                     </div>
@@ -142,13 +136,13 @@ export default function ProductGrid({
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <button
                   onClick={() => onAdd(p)}
-                  className="h-7 rounded bg-[--color-accent] text-[#1a202c] text-xs font-semibold hover:opacity-90 transition-colors active:scale-95"
+                  className="h-7 rounded bg-accent text-[#1a202c] text-xs font-semibold hover:opacity-90 transition-colors active:scale-95"
                 >
                   Add to Cart
                 </button>
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                  className="h-7 rounded border border-[--color-border] bg-[--color-surface-2] text-[--color-text-secondary] text-xs font-semibold hover:border-[--color-accent] hover:text-[--color-accent] transition-colors"
+                  className="h-7 rounded border border-border bg-surface-2] text-text-secondary text-xs font-semibold hover:border-accent hover:text-accent transition-colors"
                 >
                   {isExpanded ? "See less" : "See Details"}
                 </button>

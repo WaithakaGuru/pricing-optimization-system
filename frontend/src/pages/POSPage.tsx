@@ -66,10 +66,8 @@ export default function POSPage() {
         className="flex flex-col gap-2 max-w-350 bg-white items-center justify-center"
         style={{ height: "calc(100vh - 60px - 56px)" }}
       >
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--color-accent]"></div>
-        <span className="text-[--color-text-tertiary]">
-          Loading products...
-        </span>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+        <span className="text-text-tertiary">Loading products...</span>
       </div>
     );
   }
@@ -96,7 +94,7 @@ export default function POSPage() {
         style={{ height: "calc(100vh - 60px - 56px)", minHeight: "600px" }}
       >
         {/* Stats strip */}
-        <div className="bg-[--color-surface] border border-[--color-border] rounded-xl flex items-center px-6 pb-2 shadow-xs shrink-0">
+        <div className="bg-surface] border border-border rounded-xl flex items-center px-6 pb-2 shadow-xs shrink-0">
           {[
             {
               label: "Today's Revenue",
@@ -125,17 +123,17 @@ export default function POSPage() {
           ].map((s, i, arr) => (
             <div key={s.label} className="flex items-center flex-1">
               <div className="flex flex-col gap-0.5 py-3.5 flex-1">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-[--color-text-tertiary]">
+                <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   {s.label}
                 </span>
                 <span
-                  className={`text-lg font-semibold leading-tight font-mono ${s.accent ? "text-[--color-accent]" : "text-[--color-text-primary]"}`}
+                  className={`text-lg font-semibold leading-tight font-mono ${s.accent ? "text-accent" : "text-text-primary"}`}
                 >
                   {s.value}
                 </span>
               </div>
               {i < arr.length - 1 && (
-                <div className="w-px h-9 bg-[--color-border] mx-6 shrink-0" />
+                <div className="w-px h-9 bg-border mx-6 shrink-0" />
               )}
             </div>
           ))}
@@ -146,7 +144,7 @@ export default function POSPage() {
           className="grid gap-4 flex-1"
           style={{ gridTemplateColumns: "1fr 320px" }}
         >
-          <div className="min-h-120 relative overflow-hidden flex flex-col bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs p-4">
+          <div className="min-h-120 relative overflow-hidden flex flex-col bg-surface] border border-border rounded-2xl shadow-xs p-4">
             <ProductGrid
               products={products}
               onAdd={(p: Product) => addItem(p)}
@@ -166,18 +164,18 @@ export default function POSPage() {
         </div>
 
         {/* Transaction log */}
-        <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs shrink-0">
-          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-[--color-border] shrink-0">
-            <h2 className="text-sm font-semibold text-[--color-text-primary]">
+        <div className="bg-surface] border border-border rounded-2xl shadow-xs shrink-0">
+          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-border shrink-0">
+            <h2 className="text-sm font-semibold text-text-primary">
               Transaction Log
             </h2>
-            <span className="text-[11px] text-[--color-text-tertiary] bg-[--color-surface-2] px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-text-tertiary bg-surface-2] px-2 py-0.5 rounded-full">
               {txns.length} total
             </span>
           </div>
           {/* Log head */}
           <div
-            className="grid px-5 py-2 bg-[--color-surface-2] border-b border-[--color-border] text-[10px] font-semibold uppercase tracking-widest text-[--color-text-tertiary] shrink-0"
+            className="grid px-5 py-2 bg-surface-2] border-b border-border text-[10px] font-semibold uppercase tracking-widest text-text-tertiary shrink-0"
             style={{ gridTemplateColumns: "140px 1fr 90px 70px" }}
           >
             <span>ID</span>
@@ -190,22 +188,22 @@ export default function POSPage() {
             {txns.slice(0, 8).map((t, i) => (
               <div
                 key={t.id}
-                className="grid items-center px-5 py-2.5 border-b border-[--color-border] last:border-0 hover:bg-[--color-surface-2] transition-colors text-xs animate-fade-up"
+                className="grid items-center px-5 py-2.5 border-b border-border last:border-0 hover:bg-surface-2] transition-colors text-xs animate-fade-up"
                 style={{
                   gridTemplateColumns: "140px 1fr 90px 70px",
                   animationDelay: `${i * 25}ms`,
                 }}
               >
-                <span className="font-mono text-[--color-accent]">{t.id}</span>
-                <span className="text-[--color-text-secondary] truncate pr-4">
+                <span className="font-mono text-accent">{t.id}</span>
+                <span className="text-text-secondary truncate pr-4">
                   {t.items
                     .map((i) => `${i.product_name} ×${i.quantity}`)
                     .join(", ")}
                 </span>
-                <span className="font-semibold text-[--color-text-primary] font-mono">
+                <span className="font-semibold text-text-primary font-mono">
                   ${t.total.toFixed(2)}
                 </span>
-                <span className="text-[--color-text-tertiary]">
+                <span className="text-text-tertiary">
                   {new Date(t.timestamp).toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
