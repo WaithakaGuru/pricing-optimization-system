@@ -89,8 +89,8 @@ async def get_dashboard_summary(
         
         # Revenue metrics
         transactions = session.query(Transaction).filter(
-            Transaction.created_at >= start_date,
-            Transaction.created_at <= end_date
+            Transaction.timestamp >= start_date,
+            Transaction.timestamp <= end_date
         ).all()
         
         total_revenue = sum(t.total for t in transactions) if transactions else 0
@@ -100,8 +100,8 @@ async def get_dashboard_summary(
         # Revenue trend (compare to previous period)
         prev_start = start_date - timedelta(days=days)
         prev_transactions = session.query(Transaction).filter(
-            Transaction.created_at >= prev_start,
-            Transaction.created_at < start_date
+            Transaction.timestamp >= prev_start,
+            Transaction.timestamp < start_date
         ).all()
         prev_revenue = sum(t.total for t in prev_transactions) if prev_transactions else 1
         revenue_change_pct = ((total_revenue - prev_revenue) / prev_revenue * 100) if prev_revenue else 0
@@ -115,7 +115,7 @@ async def get_dashboard_summary(
         
         # Pricing metrics
         price_changes = session.query(PriceHistory).filter(
-            PriceHistory.created_at >= start_date
+            PriceHistory.timestamp >= start_date
         ).all()
         
         avg_price_change = 0.0
@@ -130,7 +130,7 @@ async def get_dashboard_summary(
         
         # Recommendation confidence (from agent metrics)
         agent_metrics = session.query(AgentMetrics).filter(
-            AgentMetrics.created_at >= start_date
+            AgentMetrics.timestamp >= start_date
         ).all()
         
         pricing_confidence = 0.0
@@ -180,7 +180,7 @@ async def get_recommendation_metrics(
         
         # Get agent metrics
         agent_metrics = session.query(AgentMetrics).filter(
-            AgentMetrics.created_at >= start_date
+            AgentMetrics.timestamp >= start_date
         ).all()
         
         total_recommendations = len(agent_metrics)
@@ -305,8 +305,8 @@ async def get_performance_metrics() -> PerformanceMetrics:
         # Get latest training date
         last_training = None
         if agent_metrics:
-            latest = max(agent_metrics, key=lambda x: x.created_at)
-            last_training = latest.created_at.isoformat()
+            latest = max(agent_metrics, key=lambda x: x.timestamp)
+            last_training = latest.timestamp.isoformat()
         
         session.close()
         

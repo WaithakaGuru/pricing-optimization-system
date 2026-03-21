@@ -40,6 +40,7 @@ class InventoryItem(Base):
     reorder_point = Column(Integer, nullable=False)
     reorder_quantity = Column(Integer, nullable=False)
     expiry_date = Column(DateTime, nullable=True)
+    last_restock_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -55,6 +56,9 @@ class Transaction(Base):
     quantity = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     revenue = Column(Float, nullable=False)
+    total = Column(Float, nullable=False, default=0.0)  # Alias for revenue
+    payment_method = Column(String(50), nullable=True, default="cash")
+    notes = Column(String(500), nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     
     product = relationship("Product", back_populates="transactions")
@@ -84,6 +88,10 @@ class AgentMetrics(Base):
     average_reward = Column(Float, nullable=True)
     policy_loss = Column(Float, nullable=True)
     value_loss = Column(Float, nullable=True)
+    reward = Column(Float, nullable=True)  # For prediction success/failure
+    confidence = Column(Float, nullable=True, default=0.0)  # Recommendation confidence
+    applied = Column(Boolean, nullable=True, default=False)  # Whether recommendation was applied
+    revenue_impact = Column(Float, nullable=True, default=0.0)  # Revenue impact of recommendation
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 

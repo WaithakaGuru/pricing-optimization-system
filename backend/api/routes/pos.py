@@ -15,9 +15,10 @@ router = APIRouter(prefix="/api/pos", tags=["pos"])
 class TransactionItem(BaseModel):
     """Individual item in a transaction."""
     product_id: str
+    product_name: str
     quantity: int
     price: float
-    subtotal: float
+    subtotal: Optional[float] = None
 
 
 class TransactionRequest(BaseModel):
@@ -38,12 +39,15 @@ class TransactionResponse(BaseModel):
 
 
 class TransactionHistory(BaseModel):
-    """Historical transaction record."""
-    transaction_id: str
-    items_count: int
+    """Historical transaction record with items."""
+    id: str
+    items: List[TransactionItem]
     total: float
     timestamp: str
-    payment_method: str
+    payment_method: Optional[str] = "cash"
+
+    class Config:
+        from_attributes = True
 
 
 class POSStats(BaseModel):
@@ -137,12 +141,12 @@ async def get_transactions(
     days: int = Query(30, ge=1, le=365, description="Days of history to retrieve")
 ) -> List[TransactionHistory]:
     """
-    Get recent transactions.
+    Get recent transactions with full details.
     
     - **limit**: Maximum number of transactions to return
     - **days**: Number of days of history to retrieve
     
-    Returns most recent transactions in reverse chronological order.
+    Returns most recent transactions in reverse chronological order with item details.
     """
     try:
         session = get_session()
@@ -151,25 +155,32 @@ async def get_transactions(
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days)
         
-        # Query transactions
-        transactions = session.query(Transaction).filter(
-            Transaction.created_at >= start_date,
-            Transaction.created_at <= end_date
-        ).order_by(Transaction.created_at.desc()).limit(limit).all()
+        # Query transactions with product details
+        transactions = session.query(Transaction).join(Product).filter(
+            Transaction.timestamp >= start_date,
+            Transaction.timestamp <= end_date
+        ).order_by(Transaction.timestamp.desc()).limit(limit).all()
+        
+        result = []
+        for t in transactions:
+            product = session.query(Product).filter(Product.id == t.product_id).first()
+            if product:
+                item = TransactionItem(
+                    product_id=t.product_id,
+                    product_name=product.name,
+                    quantity=t.quantity,
+                    price=t.price,
+                    subtotal=t.revenue
+                )
+                result.append(TransactionHistory(
+                    id=str(t.id),
+                    items=[item],
+                    total=t.total,
+                    timestamp=t.timestamp.isoformat(),
+                    payment_method=getattr(t, 'payment_method', 'cash')
+                ))
         
         session.close()
-        
-        result = [
-            TransactionHistory(
-                transaction_id=str(t.id),
-                items_count=len(t.items) if t.items else 0,
-                total=t.total,
-                timestamp=t.created_at.isoformat(),
-                payment_method=t.payment_method or "cash"
-            )
-            for t in transactions
-        ]
-        
         logger.info(f"Retrieved {len(result)} transactions")
         return result
         
