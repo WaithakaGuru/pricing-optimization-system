@@ -62,18 +62,28 @@ export default function POSPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-2 max-w-350 bg-white items-center justify-center" style={{ height: "calc(100vh - 60px - 56px)" }}>
+      <div
+        className="flex flex-col gap-2 max-w-350 bg-white items-center justify-center"
+        style={{ height: "calc(100vh - 60px - 56px)" }}
+      >
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[--color-accent]"></div>
-        <span className="text-[--color-text-tertiary]">Loading products...</span>
+        <span className="text-[--color-text-tertiary]">
+          Loading products...
+        </span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col gap-2 max-w-350 bg-white" style={{ height: "calc(100vh - 60px - 56px)", minHeight: "600px" }}>
+      <div
+        className="flex flex-col gap-2 max-w-350 bg-white"
+        style={{ height: "calc(100vh - 60px - 56px)", minHeight: "600px" }}
+      >
         <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-          <span className="text-red-700 text-sm font-medium">Error: {error}</span>
+          <span className="text-red-700 text-sm font-medium">
+            Error: {error}
+          </span>
         </div>
       </div>
     );

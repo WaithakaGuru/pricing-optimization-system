@@ -6,10 +6,10 @@ interface UseAsyncState<T> {
   error: Error | null;
 }
 
-interface UseAsyncOptions {
-  onSuccess?: (data: any) => void;
-  onError?: (error: Error) => void;
-}
+// interface UseAsyncOptions {
+//   onSuccess?: (data: any) => void;
+//   onError?: (error: Error) => void;
+// }
 
 export function useAsync<T>(
   asyncFunction: () => Promise<T>,

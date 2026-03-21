@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6 max-w-[1440px]">
+      <div className="flex flex-col gap-6 max-w-360">
         <LoadingSkeleton rows={4} />
       </div>
     );
@@ -40,14 +40,14 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="flex flex-col gap-6 max-w-[1440px]">
+      <div className="flex flex-col gap-6 max-w-360">
         <ErrorNotice message={error} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1440px]">
+    <div className="flex flex-col gap-6 max-w-360">
       {/* KPI row */}
       <div className="grid grid-cols-4 gap-4">
         <StatCard

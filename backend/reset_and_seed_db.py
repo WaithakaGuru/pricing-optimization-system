@@ -97,13 +97,15 @@ def seed_inventory(session, products):
     now = datetime.utcnow()
     restock_date = now - timedelta(days=random.randint(1, 15))
     
+    warehouse_locations = ["Main Warehouse", "Cold Storage", "Display Floor", "Stock Room A", "Stock Room B"]
+    
     inventory_items = [
-        InventoryItem(product_id='p001', quantity=150, reorder_point=50, reorder_quantity=100, last_restock_date=restock_date),
-        InventoryItem(product_id='p002', quantity=200, reorder_point=75, reorder_quantity=150, last_restock_date=restock_date),
-        InventoryItem(product_id='p003', quantity=85, reorder_point=30, reorder_quantity=60, last_restock_date=restock_date),
-        InventoryItem(product_id='p004', quantity=45, reorder_point=20, reorder_quantity=40, last_restock_date=restock_date),
-        InventoryItem(product_id='p005', quantity=220, reorder_point=100, reorder_quantity=200, last_restock_date=restock_date),
-        InventoryItem(product_id='p006', quantity=110, reorder_point=40, reorder_quantity=80, last_restock_date=restock_date),
+        InventoryItem(product_id='p001', quantity=150, reorder_point=50, reorder_quantity=100, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
+        InventoryItem(product_id='p002', quantity=200, reorder_point=75, reorder_quantity=150, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
+        InventoryItem(product_id='p003', quantity=85, reorder_point=30, reorder_quantity=60, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
+        InventoryItem(product_id='p004', quantity=45, reorder_point=20, reorder_quantity=40, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
+        InventoryItem(product_id='p005', quantity=220, reorder_point=100, reorder_quantity=200, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
+        InventoryItem(product_id='p006', quantity=110, reorder_point=40, reorder_quantity=80, last_restock_date=restock_date, warehouse_location=random.choice(warehouse_locations)),
     ]
     
     session.add_all(inventory_items)

@@ -64,8 +64,8 @@ export default function PriceFilters({
               onClick={() => onAgentChange(value)}
               className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
                 agent === value
-                  ? "bg-[--color-accent] text-white border-[--color-accent]"
-                  : "bg-[--color-surface] border-[--color-border] text-[--color-text-secondary] hover:border-[--color-accent]"
+                  ? "bg-accent text-white border-[--color-accent]"
+                  : "bg-surface border-[--color-border] text-[--color-text-secondary] hover:border-[--color-accent]"
               }`}
               title={desc}
             >

@@ -131,7 +131,7 @@ class InventoryService:
                 sold = session.query(func.sum(Transaction.quantity)).filter(
                     and_(
                         Transaction.product_id == product_id,
-                        Transaction.transaction_date >= cutoff_date,
+                        Transaction.timestamp >= cutoff_date,
                     )
                 ).scalar() or 0
                 

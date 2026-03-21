@@ -41,6 +41,7 @@ class InventoryItem(Base):
     reorder_quantity = Column(Integer, nullable=False)
     expiry_date = Column(DateTime, nullable=True)
     last_restock_date = Column(DateTime, nullable=True)
+    warehouse_location = Column(String(100), nullable=True, default="Main Warehouse")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

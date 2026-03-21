@@ -454,6 +454,151 @@ Metrics:
 
 ---
 
+---
+
+## ✅ Phase 3: Real Data Services Integration - COMPLETED
+
+### ✅ WeatherService
+
+**What it does**: Fetches real weather data from Open-Meteo API to provide external signals (seasonality, demand correlation) to RL agent.
+
+**Features**:
+
+- Async HTTP client using `httpx.AsyncClient`
+- Real-time current weather fetching
+- 1-16 day weather forecast
+- WMO weather code interpretation (→ human-readable descriptions)
+- Automatic normalization to [0,1] for state space integration
+
+**Key Methods**:
+
+- `get_current_weather()` → Temperature, humidity, precipitation, weather code
+- `get_weather_forecast(days)` → Multi-day forecast data
+- `interpret_weather_code(code)` → WMO 80 → "Light rain", etc.
+- `get_weather_for_state()` → Normalized weather features for StateBuilder
+
+**API**: Open-Meteo (free, no authentication required)
+
+**File**: [backend/services/weather_service.py](backend/services/weather_service.py)
+
+---
+
+### ✅ InventoryService
+
+**What it does**: Real database integration for inventory management, tracking stock levels, turnover rates, and reorder alerts.
+
+**Features**:
+
+- Query current inventory levels from database
+- Calculate turnover rates (demand velocity signal): `units_sold / avg_inventory`
+- Track reorder alerts with days-to-stockout estimation
+- Aggregate inventory metrics (health score, total units, critical items)
+- Normalize inventory features for state space
+
+**Key Methods**:
+
+- `get_inventory(product_id)` → Current stock, reorder point, status
+- `update_stock(product_id, quantity, reason)` → Record stock movements
+- `get_turnover_rate(product_id, days)` → Units/day (demand velocity)
+- `check_reorder_alerts()` → Items below reorder point with days-to-stockout
+- `get_inventory_for_state(product_id)` → Normalized inventory features
+
+**Database Integration**: SQLAlchemy queries on InventoryItem, Transaction tables
+
+**File**: [backend/services/inventory_service.py](backend/services/inventory_service.py)
+
+---
+
+### ✅ PricingService
+
+**What it does**: Central service integrating trained RL agents with database transactions for price recommendations.
+
+**Features**:
+
+- Support all 3 agent types: PPO, SAC, Contextual Bandit
+- Load trained agent checkpoints
+- Build complete state (weather + inventory + product data)
+- Generate price recommendations with explainability
+- Apply recommended prices to database
+- Record transactions for agent feedback loop
+
+**Key Methods**:
+
+- `get_recommendation(product_id)` → `{recommended_price, confidence, factors, timestamp}`
+- `apply_price(product_id, new_price, applied_by)` → Update base_price, record in PriceHistory
+- `record_transaction(product_id, qty, price, revenue)` → Commit sale, enable agent learning
+
+**Explainability**: Returns normalized state factors (cost, margin, inventory, seasonality)
+
+**File**: [backend/services/pricing_service.py](backend/services/pricing_service.py)
+
+**Example Usage**:
+
+```python
+from services.pricing_service import PricingService
+
+# Initialize with trained PPO agent
+service = PricingService(agent_type="ppo", checkpoint_path="models/ppo_checkpoint.pt")
+
+# Get recommendation
+rec = service.get_recommendation("PROD-001")
+print(f"Recommended price: ${rec['recommended_price']:.2f}")
+print(f"Confidence: {rec['confidence']:.2%}")
+print(f"Factors: {rec['factors']}")
+
+# Apply recommendation
+service.apply_price("PROD-001", rec['recommended_price'], applied_by="agent")
+
+# Record transaction (e.g., after POS sale)
+service.record_transaction("PROD-001", qty=5, price=19.99, revenue=99.95)
+```
+
+---
+
+### ✅ Test Suite: Services Integration
+
+**What it does**: Validates all three services work with real data (database queries, API calls, agent integration).
+
+**File**: [backend/test_services_integration.py](backend/test_services_integration.py)
+
+**Tests**:
+
+- WeatherService: Fetch live weather, interpret codes, normalize for state
+- InventoryService: Query database, calculate turnover, check reorder alerts
+- PricingService: Get recommendations from all 3 agent types
+
+**Run it**:
+
+```bash
+python test_services_integration.py
+```
+
+---
+
+### ✅ Database Viewing Guide
+
+**What it does**: Comprehensive guide for viewing SQLite database with 5 practical methods.
+
+**File**: [DATABASE_VIEWING_GUIDE.md](DATABASE_VIEWING_GUIDE.md)
+
+**5 Methods Documented**:
+
+1. **Prisma Studio** (GUI, easiest) — `npm run studio` (requires Prisma setup)
+2. **SQLite Browser** (GUI, recommended) — Cross-platform app download
+3. **Python + Pandas** (analysis-heavy) — Full dataframe exploration
+4. **SQLite CLI** (production debugging) — `sqlite3 optima.db` + SQL
+5. **Advanced Python** (matplotlib) — Sales trends, pricing optimization tracking
+
+**Common Queries Included**:
+
+- Inventory health report
+- Sales analysis by product
+- Pricing optimization tracking
+- Transaction history
+- Reorder alert detection
+
+---
+
 ## ⏳ Next Steps (In Priority Order)
 
 1. ~~**RewardShaper**~~ ✓
@@ -461,25 +606,35 @@ Metrics:
 3. ~~**RL Environment**~~ ✓
 4. ~~**Phase 1 Agent: Contextual Bandit**~~ ✓
 5. ~~**Phase 2 Agents: PPO & SAC**~~ ✓
+6. ~~**WeatherService**~~ ✓
+7. ~~**InventoryService**~~ ✓
+8. ~~**PricingService**~~ ✓
+9. ~~**Database Viewing Guide**~~ ✓
 
-6. **API Integration** — Wire up endpoints:
-   - `/api/prices/recommend/{product_id}` — Get price from trained bandit/agent
-   - `/api/prices/update-price/{product_id}` — Update price and trigger agent feedback
-   - `/api/metrics/dashboard` — Visualization of agent performance
+10. **Verify Services** — Run integration tests with real data
+    - Check database connectivity
+    - Test API calls (weather, etc.)
+    - Validate state assembly
 
-7. **Frontend Integration** — Real-time pricing dashboard:
-   - Display current prices & recommendations
-   - Show reward metrics and learning progress
-   - Manual override controls
+11. **API Integration** — Wire up FastAPI endpoints:
+    - `/api/prices/recommend/{product_id}` — Uses PricingService.get_recommendation()
+    - `/api/prices/apply/{product_id}` — Uses PricingService.apply_price()
+    - `/api/transactions/record` — Uses PricingService.record_transaction()
+    - `/api/metrics/dashboard` — Inventory + pricing metrics
 
-8. **Demand Forecaster** (Optional) — Prophet for demand prediction
+12. **Frontend Integration** — Real-time pricing dashboard:
+    - Display current prices & recommendations
+    - Show reward metrics and learning progress
+    - Manual override controls
+
+13. **Demand Forecaster** (Optional) — Prophet for demand prediction
 
 ---
 
 ## 📊 Current Status
 
 **Backend**: RL Pipeline Complete! ✓  
-**Database**: SQLite + Synthetic Data ✓  
-**Core RL Loop**: StateBuilder ✓ → RewardShaper ✓ → Environment ✓ → Bandit Agent ✓
-**Phase 1 Agent**: Contextual Bandit Ready for Training ✓
-**Next**: Train bandit / Phase 2 PPO+SAC Agents / API Integration
+**Services**: Weather, Inventory, Pricing Integration Complete! ✓  
+**Database**: SQLite + Real Data Ready ✓  
+**Core RL Loop**: StateBuilder ✓ → RewardShaper ✓ → Environment ✓ → Agents ✓ → Services ✓
+**Next**: Verify services work → API endpoints → Frontend dashboard
