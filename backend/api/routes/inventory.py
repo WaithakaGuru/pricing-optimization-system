@@ -191,7 +191,7 @@ async def update_inventory(
             "quantity_change": request.quantity_change,
             "new_stock": updated_inv["current_stock"],
             "status": updated_inv["status"],
-            "updated_at": datetime.utcnow().isoformat()
+            "updated_at": datetime.now().isoformat()
         }
         
     except HTTPException:

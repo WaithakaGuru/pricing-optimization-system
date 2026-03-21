@@ -13,6 +13,7 @@ export default function POSPage() {
   const [lastTxnId, setLastTxnId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkingOut, setCheckingOut] = useState(false);
 
   // Fetch products and transactions on mount + auto-refresh
   useEffect(() => {
@@ -90,9 +91,11 @@ export default function POSPage() {
       };
 
       // Record transaction to database
+      setCheckingOut(true);
       const result = await posApi.record(transaction);
       setLastTxnId(result.id);
       clearCart();
+      setCheckingOut(false);
 
       // Refresh transaction list immediately after recording (event-driven, not polling)
       const transactionsData = await posApi.transactions(100);
@@ -101,9 +104,6 @@ export default function POSPage() {
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
       );
       setTxns(sorted);
-
-      // Clear the highlight after 5 seconds
-      setTimeout(() => setLastTxnId(null), 5000);
     } catch (err) {
       console.error("Error recording transaction:", err);
       setError(
@@ -211,6 +211,7 @@ export default function POSPage() {
               onCheckout={handleCheckout}
               onClear={clearCart}
               lastTxnId={lastTxnId}
+              checkingOut={checkingOut}
             />
           </div>
         </div>
@@ -228,7 +229,7 @@ export default function POSPage() {
           {/* Log head */}
           <div
             className="grid px-5 py-2 bg-surface-2] border-b border-border text-[10px] font-semibold uppercase tracking-widest text-text-tertiary shrink-0"
-            style={{ gridTemplateColumns: "140px 1fr 90px 70px" }}
+            style={{ gridTemplateColumns: "25rem 1fr 10rem 9rem" }}
           >
             <span>ID</span>
             <span>Items</span>
@@ -245,18 +246,22 @@ export default function POSPage() {
               sortedDates.map((dateStr, dateIdx) => {
                 const dateObj = new Date(dateStr);
                 const isCurrentDay = dateStr === new Date().toDateString();
-                const dateLabel = isCurrentDay
-                  ? "Today"
-                  : dateObj.toLocaleDateString("en-US", {
+                const dateLabel = isCurrentDay ? (
+                  <div className="bg-bg p-3 min-w-40">"Today"</div>
+                ) : (
+                  <div className="bg-bg p-3 min-w-40">
+                    {dateObj.toLocaleDateString("en-US", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
-                    });
+                    })}
+                  </div>
+                );
 
                 return (
                   <div key={dateStr}>
                     {/* Date marker */}
-                    <div className="sticky top-0 bg-surface-2] border-t border-b border-border px-5 py-2 z-10">
+                    <div className="sticky top-0 bg-surface-2 border-t border-b border-border px-5 py-2 z-10">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                         {dateLabel}
                       </span>
@@ -267,7 +272,7 @@ export default function POSPage() {
                         key={t.id}
                         className="grid items-center px-5 py-2.5 border-b border-border last:border-0 hover:bg-surface-2] transition-colors text-xs animate-fade-up"
                         style={{
-                          gridTemplateColumns: "140px 1fr 90px 70px",
+                          gridTemplateColumns: "25rem 1fr 10rem 9rem",
                           animationDelay: `${dateIdx * 50 + txnIdx * 25}ms`,
                         }}
                       >

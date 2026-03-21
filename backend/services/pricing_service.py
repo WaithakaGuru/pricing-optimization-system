@@ -120,14 +120,14 @@ class PricingService:
             # Get current price for comparison
             with Session(self.engine) as session:
                 product = session.query(Product).filter(
-                    Product.product_id == product_id
+                    Product.id == product_id
                 ).first()
                 
                 if not product:
                     logger.error(f"Product not found: {product_id}")
                     return None
                 
-                current_price = product.base_price
+                current_price = product.current_price
             
             # Build factors dict for explanation
             factors = self._extract_state_factors(product_id, state)
@@ -172,15 +172,15 @@ class PricingService:
         try:
             with Session(self.engine) as session:
                 product = session.query(Product).filter(
-                    Product.product_id == product_id
+                    Product.id == product_id
                 ).first()
                 
                 if not product:
                     logger.error(f"Product not found: {product_id}")
                     return None
                 
-                old_price = product.base_price
-                product.base_price = new_price
+                old_price = product.current_price
+                product.current_price = new_price
                 
                 # Record in price history
                 price_record = PriceHistory(
@@ -273,20 +273,28 @@ class PricingService:
             Transaction record
         """
         try:
+            from uuid import uuid4
+            
+            # Generate unique transaction ID
+            transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
+            
             with Session(self.engine) as session:
                 transaction = Transaction(
+                    id=transaction_id,  # Add required ID field
                     product_id=product_id,
                     quantity=quantity,
                     price=price,
                     revenue=revenue,
-                    transaction_date=datetime.now(),
+                    total=revenue,
+                    timestamp=datetime.now(),
                 )
                 session.add(transaction)
                 session.commit()
                 
-                logger.info(f"Transaction recorded: {product_id} x{quantity} @ {price}")
+                logger.info(f"Transaction recorded: {transaction_id} - {product_id} x{quantity} @ {price}")
                 
                 return {
+                    "id": transaction_id,
                     "product_id": product_id,
                     "quantity": quantity,
                     "price": float(price),

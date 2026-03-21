@@ -8,6 +8,7 @@ interface Props {
   onCheckout: () => void;
   onClear: () => void;
   lastTxnId: string | null;
+  checkingOut: boolean;
 }
 
 export default function CartPanel({
@@ -18,6 +19,7 @@ export default function CartPanel({
   onCheckout,
   onClear,
   lastTxnId,
+  checkingOut,
 }: Props) {
   const isEmpty = items.length === 0;
   const tax = total * 0.16;
@@ -146,10 +148,16 @@ export default function CartPanel({
 
         <button
           onClick={onCheckout}
-          disabled={isEmpty}
+          disabled={isEmpty || checkingOut}
           className="w-full h-11 rounded-lg bg-[#2d3748] text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#1a202c] transition-colors mt-2 flex items-center justify-center gap-2"
         >
-          <CheckmarkIcon /> Complete Transaction
+          {checkingOut ? (
+            "🔃Transacting Please wait..."
+          ) : (
+            <div className="flex">
+              <CheckmarkIcon /> Complete Transaction
+            </div>
+          )}
         </button>
       </div>
     </div>

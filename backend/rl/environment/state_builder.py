@@ -1,10 +1,29 @@
 """State assembly from multiple signals."""
 import numpy as np
 import logging
+import sys
+from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Product, InventoryItem, Transaction
 from datetime import datetime, timedelta
+
+# Fix import paths for module resolution
+_backend_path = Path(__file__).parent.parent.parent / "backend"
+if str(_backend_path) not in sys.path:
+    sys.path.insert(0, str(_backend_path))
+
+try:
+    from models import Product, InventoryItem, Transaction
+except ImportError:
+    # If direct import fails, try relative from parent backend package
+    import importlib.util
+    models_path = Path(__file__).parent.parent.parent / "backend" / "models.py"
+    spec = importlib.util.spec_from_file_location("models", models_path)
+    models = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(models)
+    Product = models.Product
+    InventoryItem = models.InventoryItem
+    Transaction = models.Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +168,7 @@ class StateBuilder:
         Calculate price trend (-1 to 1).
         -1 = prices falling, 0 = stable, 1 = prices rising
         """
-        from backend.models import PriceHistory
+        from models import PriceHistory
         
         cutoff_date = datetime.utcnow() - timedelta(days=7)
         price_changes = session.query(PriceHistory).filter(

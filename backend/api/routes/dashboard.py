@@ -84,7 +84,7 @@ async def get_dashboard_summary(
         inventory_service = InventoryService()
         
         # Calculate date range
-        end_date = datetime.utcnow()
+        end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
         # Revenue metrics
@@ -152,7 +152,7 @@ async def get_dashboard_summary(
             items_critical=items_critical,
             avg_price_change=avg_price_change * 100,
             pricing_confidence=pricing_confidence,
-            last_updated=datetime.utcnow().isoformat()
+            last_updated=datetime.now().isoformat()
         )
         
     except Exception as e:
@@ -175,7 +175,7 @@ async def get_recommendation_metrics(
         session = get_session()
         
         # Calculate date range
-        end_date = datetime.utcnow()
+        end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
         # Get agent metrics

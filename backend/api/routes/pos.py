@@ -80,10 +80,11 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
         inventory_service = InventoryService()
         
         # Generate unique transaction ID BEFORE processing items
-        transaction_id = f"TXN-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
+        transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
         recorded_items = []
+        items_for_inventory = []
         
-        # Process each item
+        # Step 1: Record all transactions in database
         for idx, item in enumerate(transaction.items):
             # Verify product exists
             product = session.query(Product).filter(Product.id == item.product_id).first()
@@ -102,39 +103,53 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
                 total=item.subtotal or (item.quantity * item.price),
                 payment_method=transaction.payment_method,
                 notes=transaction.notes,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now()
             )
             session.add(trans)
             session.flush()
             
             recorded_items.append(item)
-            
-            # Update inventory (negative quantity = sold)
-            inventory_service.update_stock(
-                item.product_id,
-                -item.quantity,
-                reason="pos_sale"
-            )
-            
-            # Record transaction for agent feedback
-            pricing_service.record_transaction(
-                product_id=item.product_id,
-                quantity=item.quantity,
-                price=item.price,
-                revenue=item.subtotal or (item.quantity * item.price)
-            )
+            items_for_inventory.append({
+                'product_id': item.product_id,
+                'quantity': item.quantity,
+                'price': item.price,
+                'revenue': item.subtotal or (item.quantity * item.price)
+            })
             
             logger.info(f"  Item: {item.product_id} x{item.quantity} @ ${item.price} = ${item.subtotal or (item.quantity * item.price)}")
         
+        # Commit the main transaction FIRST
         session.commit()
         session.close()
         
-        logger.info(f"✓ Transaction {transaction_id} recorded successfully with {len(recorded_items)} items")
+        # Step 2: Update inventory and pricing AFTER main transaction commits
+        # This avoids database locking issues
+        for item in items_for_inventory:
+            try:
+                inventory_service.update_stock(
+                    item['product_id'],
+                    -item['quantity'],
+                    reason="pos_sale"
+                )
+            except Exception as e:
+                logger.warning(f"Failed to update inventory for {item['product_id']}: {e}")
+            
+            try:
+                pricing_service.record_transaction(
+                    product_id=item['product_id'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    revenue=item['revenue']
+                )
+            except Exception as e:
+                logger.warning(f"Failed to record transaction for {item['product_id']}: {e}")
+        
+        logger.info(f"[OK] Transaction {transaction_id} recorded successfully with {len(recorded_items)} items")
         return TransactionResponse(
             transaction_id=str(transaction_id),
             items=recorded_items,
             total=transaction.total,
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now().isoformat(),
             status="completed"
         )
         

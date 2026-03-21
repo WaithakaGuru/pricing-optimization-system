@@ -93,6 +93,7 @@ class InventoryService:
                 
                 old_qty = inv.quantity
                 inv.quantity += quantity_change
+                inv.updated_at = datetime.now()
                 
                 # Update last restock if restocking
                 if quantity_change > 0:
@@ -100,12 +101,23 @@ class InventoryService:
                 
                 session.commit()
                 
+                # Build response without opening a new session
+                status = "critical" if inv.quantity < inv.reorder_point * 0.5 else \
+                        "low" if inv.quantity < inv.reorder_point else "healthy"
+                
                 logger.info(
                     f"Stock updated: {product_id} "
                     f"{old_qty} → {inv.quantity} (reason: {reason})"
                 )
                 
-                return self.get_inventory(product_id)
+                return {
+                    "product_id": product_id,
+                    "current_stock": inv.quantity,
+                    "reorder_point": inv.reorder_point,
+                    "last_restock": inv.last_restock_date.isoformat() if inv.last_restock_date else None,
+                    "status": status,
+                    "warehouse_location": inv.warehouse_location,
+                }
                 
         except Exception as e:
             logger.error(f"Error updating stock: {e}")

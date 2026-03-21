@@ -103,7 +103,7 @@ class PPOAgent:
         self,
         state: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, float, float]:
+    ) -> Tuple[float, float, float]:
         """
         Select action (price) given state using current policy.
         
@@ -112,43 +112,55 @@ class PPOAgent:
             deterministic: If True, use mean action (no sampling)
         
         Returns:
-            action: Selected price action
+            action_scaled: Selected price action (float, range [0.1, 1000])
             log_prob: Log probability of action (float)
             value: Estimated state value (float)
         """
         with torch.no_grad():
-            # Convert state to tensor
-            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            # Convert state to tensor if needed
+            if isinstance(state, np.ndarray):
+                state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+            else:
+                state_tensor = state.unsqueeze(0).to(self.device) if state.dim() == 1 else state.to(self.device)
             
-            # Get action from actor
-            action_mean = self.actor(state_tensor)
+            # Get action from actor (output is tanh, so in [-1, 1])
+            action_mean = self.actor(state_tensor)  # shape: [batch, 1]
             
             # Get value from critic
-            value = self.critic(state_tensor).squeeze().cpu().numpy()
-            if isinstance(value, np.ndarray):
-                value = float(value)
-            else:
-                value = float(value)
+            value_tensor = self.critic(state_tensor).squeeze()  # shape: []
+            value = float(value_tensor.cpu().detach().numpy())
             
             if deterministic:
-                action = action_mean.squeeze().cpu().numpy()
+                # Use mean action directly
+                action_tensor = action_mean  # Still a tensor
                 log_prob = 0.0
             else:
                 # Add exploration noise (Gaussian)
                 noise = torch.randn_like(action_mean) * 0.1
-                action = action_mean + noise
+                action_tensor = action_mean + noise
                 
                 # Compute log probability (approximate as Gaussian)
                 log_prob_tensor = -0.5 * (noise ** 2).sum()
-                log_prob = float(log_prob_tensor.cpu().numpy())
+                log_prob = float(log_prob_tensor.cpu().detach().numpy())
             
-            # Scale action from network output to price range [0.1, 1000]
-            # Network outputs in [-1, 1] from tanh
-            action_scaled = action.squeeze().cpu().numpy()
-            action_scaled = float(action_scaled) if isinstance(action_scaled, np.ndarray) else action_scaled
-            # Scale from [-1, 1] to [0.1, 1000]
-            action_scaled = (action_scaled + 1.0) / 2.0 * 999.9 + 0.1
-            action_scaled = np.clip(action_scaled, 0.1, 1000.0)
+            # Convert action tensor to numpy for scaling
+            action_np = action_tensor.squeeze().cpu().detach().numpy()
+            
+            # Handle both scalar and array outputs
+            if isinstance(action_np, np.ndarray):
+                # Multi-dimensional or 1D array
+                if action_np.ndim == 0:
+                    # 0-dimensional array (scalar wrapped in array)
+                    action_value = float(action_np)
+                else:
+                    # Get first element if non-scalar
+                    action_value = float(action_np.flat[0])
+            else:
+                action_value = float(action_np)
+            
+            # Scale from [-1, 1] (tanh output) to [0.1, 1000]
+            action_scaled = (action_value + 1.0) / 2.0 * 999.9 + 0.1
+            action_scaled = float(np.clip(action_scaled, 0.1, 1000.0))
         
         return action_scaled, log_prob, value
 

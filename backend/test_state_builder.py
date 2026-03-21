@@ -1,6 +1,6 @@
 """Test script for StateBuilder."""
 from rl.environment.state_builder import StateBuilder
-from backend.models import Product, InventoryItem
+from models import Product, InventoryItem
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import numpy as np
