@@ -114,7 +114,7 @@ export default function PricesPage() {
   if (loading && products.length === 0) {
     return (
       <div className="flex flex-col gap-6 max-w-350">
-        <div className="h-12 bg-[--color-surface-2] rounded-lg animate-pulse" />
+        <div className="h-12 bg-surface-2] rounded-lg animate-pulse" />
         <div
           className="grid gap-4"
           style={{
@@ -124,7 +124,7 @@ export default function PricesPage() {
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="h-64 bg-[--color-surface-2] rounded-xl animate-pulse"
+              className="h-64 bg-surface-2] rounded-xl animate-pulse"
             />
           ))}
         </div>
@@ -136,16 +136,16 @@ export default function PricesPage() {
     <div className="flex flex-col gap-4 md:gap-6 max-w-none px-0">
       {/* Header */}
       <div>
-        <h1 className="text-xl md:text-2xl font-bold text-[--color-text-primary] mb-1">
+        <h1 className="text-xl md:text-2xl font-bold text-text-primary mb-1">
           AI Price Recommendations
         </h1>
-        <p className="text-xs md:text-sm text-[--color-text-tertiary]">
+        <p className="text-xs md:text-sm text-text-tertiary">
           Optimize prices using ML agents
         </p>
       </div>
       {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-[--color-danger-light] border border-red-200 rounded-xl text-[--color-danger] text-sm animate-fade-up">
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-danger-light border border-red-200 rounded-xl text-danger text-sm animate-fade-up">
           <svg
             width="16"
             height="16"
@@ -170,7 +170,7 @@ export default function PricesPage() {
           <span className="flex-1">{error}</span>
           <button
             onClick={() => setError(null)}
-            className="text-[--color-danger] opacity-60 hover:opacity-100"
+            className="text-danger opacity-60 hover:opacity-100"
           >
             ✕
           </button>
@@ -187,7 +187,7 @@ export default function PricesPage() {
       />
       {/* Products grid - responsive */}
       {sorted.length === 0 ? (
-        <div className="flex items-center justify-center h-64 bg-[--color-surface] border border-[--color-border] rounded-xl text-[--color-text-tertiary]">
+        <div className="flex items-center justify-center h-64 bg-surface] border border-border rounded-xl text-text-tertiary">
           <p>No products found</p>
         </div>
       ) : (
