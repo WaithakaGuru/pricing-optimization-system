@@ -122,7 +122,7 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
         session.commit()
         session.close()
         
-        # Step 2: Update inventory and pricing AFTER main transaction commits
+        # Step 2: Update inventory AFTER main transaction commits
         # This avoids database locking issues
         for item in items_for_inventory:
             try:
@@ -134,15 +134,8 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
             except Exception as e:
                 logger.warning(f"Failed to update inventory for {item['product_id']}: {e}")
             
-            try:
-                pricing_service.record_transaction(
-                    product_id=item['product_id'],
-                    quantity=item['quantity'],
-                    price=item['price'],
-                    revenue=item['revenue']
-                )
-            except Exception as e:
-                logger.warning(f"Failed to record transaction for {item['product_id']}: {e}")
+            # Note: Transaction is already recorded in database (Step 1 above)
+            # No need for duplicate record from pricing service
         
         logger.info(f"[OK] Transaction {transaction_id} recorded successfully with {len(recorded_items)} items")
         return TransactionResponse(
@@ -178,8 +171,8 @@ async def get_transactions(
     try:
         session = get_session()
         
-        # Calculate date range
-        end_date = datetime.utcnow()
+        # Calculate date range (use local time to match transaction timestamps)
+        end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
         # Query transactions - order by timestamp DESC to get latest first

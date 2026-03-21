@@ -257,6 +257,7 @@ class PricingService:
         quantity: int,
         price: float,
         revenue: float,
+        transaction_id: Optional[str] = None,
     ) -> Optional[Dict]:
         """
         Record a transaction for agent feedback.
@@ -268,6 +269,7 @@ class PricingService:
             quantity: Units sold
             price: Price per unit
             revenue: Total revenue
+            transaction_id: Optional existing transaction ID (if already recorded)
             
         Returns:
             Transaction record
@@ -275,12 +277,13 @@ class PricingService:
         try:
             from uuid import uuid4
             
-            # Generate unique transaction ID
-            transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
+            # Use provided ID or generate new one
+            if not transaction_id:
+                transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
             
             with Session(self.engine) as session:
                 transaction = Transaction(
-                    id=transaction_id,  # Add required ID field
+                    id=transaction_id,
                     product_id=product_id,
                     quantity=quantity,
                     price=price,
