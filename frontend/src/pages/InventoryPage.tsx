@@ -256,7 +256,7 @@ export default function InventoryPage() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <span className="text-xs text-text-tertiary]">
+                    <span className="text-xs text-text-tertiary">
                       {updated}
                     </span>
                     <button

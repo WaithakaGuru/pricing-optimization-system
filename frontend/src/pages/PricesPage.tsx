@@ -187,7 +187,7 @@ export default function PricesPage() {
       />
       {/* Products grid - responsive */}
       {sorted.length === 0 ? (
-        <div className="flex items-center justify-center h-64 bg-surface] border border-border rounded-xl text-text-tertiary">
+        <div className="flex items-center justify-center h-64 bg-surface border border-border rounded-xl text-text-tertiary">
           <p>No products found</p>
         </div>
       ) : (
@@ -202,7 +202,6 @@ export default function PricesPage() {
           ))}
         </div>
       )}
-      "
     </div>
   );
 }

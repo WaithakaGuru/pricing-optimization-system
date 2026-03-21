@@ -1,12 +1,3 @@
-import { type ReactNode } from "react";
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  fallback?: ReactNode;
-  message?: string;
-  onRetry?: () => void;
-}
-
 export function ErrorNotice({
   message,
   onRetry,
