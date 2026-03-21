@@ -143,7 +143,6 @@ export default function PricesPage() {
           Optimize prices using ML agents
         </p>
       </div>
-
       {/* Error banner */}
       {error && (
         <div className="flex items-center gap-2.5 px-4 py-3 bg-[--color-danger-light] border border-red-200 rounded-xl text-[--color-danger] text-sm animate-fade-up">
@@ -177,7 +176,6 @@ export default function PricesPage() {
           </button>
         </div>
       )}
-
       {/* Filters */}
       <PriceFilters
         agent={agent}
@@ -187,16 +185,13 @@ export default function PricesPage() {
         sortBy={sortBy}
         onSortByChange={setSortBy}
       />
-
       {/* Products grid - responsive */}
       {sorted.length === 0 ? (
         <div className="flex items-center justify-center h-64 bg-[--color-surface] border border-[--color-border] rounded-xl text-[--color-text-tertiary]">
           <p>No products found</p>
         </div>
       ) : (
-        <div
-          className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        >
+        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sorted.map((product) => (
             <PriceCard
               key={product.id}
@@ -206,7 +201,8 @@ export default function PricesPage() {
             />
           ))}
         </div>
-      )}"
+      )}
+      "
     </div>
   );
 }

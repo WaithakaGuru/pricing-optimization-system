@@ -54,7 +54,7 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:static top-0 left-0 w-60 h-screen bg-surface border-r border-border-2 flex flex-col z-40 transition-transform ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+        className={`fixed md:sticky top-0 left-0 w-60 h-screen bg-surface border-r border-border-2 flex flex-col z-40 transition-transform ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         {/* Logo */}
         <div className="flex items-center gap-2.5 px-5 py-5 border-b border-[--color-border]">

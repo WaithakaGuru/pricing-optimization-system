@@ -196,7 +196,8 @@ export default function InventoryPage() {
       {/* Table */}
       <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs overflow-hidden">
         {/* Desktop table header */}
-        <div className="hidden md:grid px-6 py-3 border-b border-[--color-border] text-xs font-semibold uppercase tracking-widest text-[--color-text-tertiary] gap-4"
+        <div
+          className="hidden md:grid px-6 py-3 border-b border-[--color-border] text-xs font-semibold uppercase tracking-widest text-[--color-text-tertiary] gap-4"
           style={{ gridTemplateColumns: COL }}
         >
           <span>Product</span>
@@ -242,16 +243,26 @@ export default function InventoryPage() {
                   <StockBar qty={item.quantity} reorder={item.reorder_point} />
                   <div className="flex justify-between text-xs">
                     <div>
-                      <span className="text-[--color-text-tertiary]">Reorder: </span>
-                      <span className="text-[--color-text-secondary] font-mono">{item.reorder_point}</span>
+                      <span className="text-[--color-text-tertiary]">
+                        Reorder:{" "}
+                      </span>
+                      <span className="text-[--color-text-secondary] font-mono">
+                        {item.reorder_point}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[--color-text-tertiary]">Qty: </span>
-                      <span className="text-[--color-text-secondary] font-mono">{item.reorder_quantity}</span>
+                      <span className="text-[--color-text-tertiary]">
+                        Qty:{" "}
+                      </span>
+                      <span className="text-[--color-text-secondary] font-mono">
+                        {item.reorder_quantity}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t border-[--color-border]">
-                    <span className="text-xs text-[--color-text-tertiary]">{updated}</span>
+                    <span className="text-xs text-[--color-text-tertiary]">
+                      {updated}
+                    </span>
                     <button
                       onClick={() => setEditing(item)}
                       className="text-xs font-medium px-3 py-1.5 rounded-md border border-[--color-border] text-[--color-text-secondary] bg-[--color-surface] hover:border-[--color-accent] hover:text-[--color-accent] hover:bg-[--color-accent-light] transition-all"
@@ -312,7 +323,11 @@ export default function InventoryPage() {
         <span>
           Total units:{" "}
           <strong className="text-[--color-text-secondary] font-semibold">
-            {items.length > 0 ? items.reduce((s, i) => s + (i.quantity || 0), 0).toLocaleString() : "0"}
+            {items.length > 0
+              ? items
+                  .reduce((s, i) => s + (i.quantity || 0), 0)
+                  .toLocaleString()
+              : "0"}
           </strong>
         </span>
       </div>
