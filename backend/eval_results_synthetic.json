@@ -1,0 +1,67 @@
+{
+  "agent_type": "SAC",
+  "timestamp": "2026-03-22T22:22:45.169442",
+  "num_episodes": 5,
+  "episodes": [
+    {
+      "episode_reward": 39.82514212086166,
+      "episode_length": 100,
+      "avg_reward": 0.3982514212086166,
+      "std_reward": 0.25825889171645117,
+      "avg_price": 457.4138607788086,
+      "std_price": 15.698601273363947,
+      "min_price": 427.0169677734375,
+      "max_price": 479.8417663574219,
+      "reward_max": 1.0,
+      "reward_min": 0.18227982096209597
+    },
+    {
+      "episode_reward": 34.22598497688817,
+      "episode_length": 100,
+      "avg_reward": 0.3422598497688816,
+      "std_reward": 0.13265220800114524,
+      "avg_price": 363.5202926635742,
+      "std_price": 12.900476304479664,
+      "min_price": 332.1827087402344,
+      "max_price": 398.72607421875,
+      "reward_max": 0.8419958952473217,
+      "reward_min": 0.1793091550450175
+    },
+    {
+      "episode_reward": 6.96377543539815,
+      "episode_length": 100,
+      "avg_reward": 0.06963775435398149,
+      "std_reward": 0.057062641092656706,
+      "avg_price": 364.753782043457,
+      "std_price": 10.603437619186078,
+      "min_price": 336.3570251464844,
+      "max_price": 381.9579772949219,
+      "reward_max": 0.2245851344196347,
+      "reward_min": 0.0
+    },
+    {
+      "episode_reward": 22.02434072416323,
+      "episode_length": 100,
+      "avg_reward": 0.22024340724163227,
+      "std_reward": 0.17661682482340232,
+      "avg_price": 436.60800872802736,
+      "std_price": 11.88517453727932,
+      "min_price": 408.8663330078125,
+      "max_price": 458.4814147949219,
+      "reward_max": 0.5433067877129523,
+      "reward_min": 0.0
+    },
+    {
+      "episode_reward": 30.846297123585728,
+      "episode_length": 100,
+      "avg_reward": 0.30846297123585736,
+      "std_reward": 0.10000205971195228,
+      "avg_price": 438.19442779541015,
+      "std_price": 11.720786670926342,
+      "min_price": 412.9118347167969,
+      "max_price": 457.93438720703125,
+      "reward_max": 0.51794054524055,
+      "reward_min": 0.11504768718699379
+    }
+  ]
+}

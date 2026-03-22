@@ -158,14 +158,13 @@ class SyntheticAgentEvaluator:
         for step in range(num_steps):
             state = states[step]
             
-            # Select action
+            # Select action (PPO returns 3 values, SAC returns 2)
             if deterministic:
-                action, _, _ = self.agent.select_action(state, deterministic=True)
+                result = self.agent.select_action(state, deterministic=True)
             else:
-                action, _, _ = self.agent.select_action(state, deterministic=False)
+                result = self.agent.select_action(state, deterministic=False)
             
-            # Price is typically in [10, 30] range (from action in [-1, 1])
-            price = np.clip(action[0] * 10 + 20, 10, 30)
+            price = result[0]  # First element is always the action/price
             
             # Compute reward
             reward = self.data_generator.compute_synthetic_reward(price, state)

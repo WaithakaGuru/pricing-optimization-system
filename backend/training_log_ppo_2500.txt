@@ -1,0 +1,76 @@
+2026-03-22 22:31:35,828 - INFO - ======================================================================
+2026-03-22 22:31:35,828 - INFO - SYNTHETIC LIVE TRAINING - PPO Agent
+2026-03-22 22:31:35,828 - INFO - ======================================================================
+2026-03-22 22:31:37,436 - INFO - PPO Agent initialized with state_dim=12, action_dim=1
+2026-03-22 22:31:37,436 - INFO - \u2713 Initialized PPOAgent
+2026-03-22 22:31:37,438 - INFO - \u2713 Using synthetic state vectors (no database required)
+2026-03-22 22:31:37,438 - INFO - \u2713 Initialized SyntheticLiveTrainer with config: {'update_interval': 50, 'buffer_capacity': 100000, 'batch_size': 64, 'checkpoint_interval': 200}
+2026-03-22 22:31:37,438 - INFO - 
+Simulating 2500 synthetic transactions...
+2026-03-22 22:31:37,438 - INFO -   Txn  100/2500 | Reward: 0.3521 ± 0.0719 | Updates:  2
+2026-03-22 22:31:37,441 - INFO -   Txn  200/2500 | Reward: 0.3697 ± 0.0738 | Updates:  4
+2026-03-22 22:31:37,441 - INFO -   Txn  300/2500 | Reward: 0.3787 ± 0.0801 | Updates:  6
+2026-03-22 22:31:37,441 - INFO -   Txn  400/2500 | Reward: 0.3874 ± 0.0799 | Updates:  8
+2026-03-22 22:31:37,444 - INFO -   Txn  500/2500 | Reward: 0.3924 ± 0.0769 | Updates: 10
+2026-03-22 22:31:37,445 - INFO -   Txn  600/2500 | Reward: 0.4033 ± 0.0769 | Updates: 12
+2026-03-22 22:31:37,446 - INFO -   Txn  700/2500 | Reward: 0.4121 ± 0.0745 | Updates: 14
+2026-03-22 22:31:37,448 - INFO -   Txn  800/2500 | Reward: 0.4226 ± 0.0764 | Updates: 16
+2026-03-22 22:31:37,449 - INFO -   Txn  900/2500 | Reward: 0.4376 ± 0.0738 | Updates: 18
+2026-03-22 22:31:37,450 - INFO -   Txn 1000/2500 | Reward: 0.4461 ± 0.0751 | Updates: 20
+2026-03-22 22:31:37,451 - INFO -   Txn 1100/2500 | Reward: 0.4485 ± 0.0754 | Updates: 22
+2026-03-22 22:31:37,451 - INFO -   Txn 1200/2500 | Reward: 0.4648 ± 0.0677 | Updates: 24
+2026-03-22 22:31:37,455 - INFO -   Txn 1300/2500 | Reward: 0.4766 ± 0.0759 | Updates: 26
+2026-03-22 22:31:37,456 - INFO -   Txn 1400/2500 | Reward: 0.4870 ± 0.0763 | Updates: 28
+2026-03-22 22:31:37,457 - INFO -   Txn 1500/2500 | Reward: 0.4967 ± 0.0761 | Updates: 30
+2026-03-22 22:31:37,458 - INFO -   Txn 1600/2500 | Reward: 0.5024 ± 0.0746 | Updates: 32
+2026-03-22 22:31:37,459 - INFO -   Txn 1700/2500 | Reward: 0.5134 ± 0.0710 | Updates: 34
+2026-03-22 22:31:37,460 - INFO -   Txn 1800/2500 | Reward: 0.5247 ± 0.0725 | Updates: 36
+2026-03-22 22:31:37,460 - INFO -   Txn 1900/2500 | Reward: 0.5333 ± 0.0756 | Updates: 38
+2026-03-22 22:31:37,462 - INFO -   Txn 2000/2500 | Reward: 0.5462 ± 0.0742 | Updates: 40
+2026-03-22 22:31:37,463 - INFO -   Txn 2100/2500 | Reward: 0.5610 ± 0.0722 | Updates: 42
+2026-03-22 22:31:37,464 - INFO -   Txn 2200/2500 | Reward: 0.5657 ± 0.0725 | Updates: 44
+2026-03-22 22:31:37,465 - INFO -   Txn 2300/2500 | Reward: 0.5727 ± 0.0752 | Updates: 46
+2026-03-22 22:31:37,466 - INFO -   Txn 2400/2500 | Reward: 0.5852 ± 0.0774 | Updates: 48
+2026-03-22 22:31:37,468 - INFO -   Txn 2500/2500 | Reward: 0.5986 ± 0.0723 | Updates: 50
+2026-03-22 22:31:37,468 - INFO - ======================================================================
+2026-03-22 22:31:37,468 - INFO - SYNTHETIC TRAINING RESULTS
+2026-03-22 22:31:37,468 - INFO - ======================================================================
+2026-03-22 22:31:37,468 - INFO - Total Transactions: 2500
+2026-03-22 22:31:37,468 - INFO - Total Updates: 50
+2026-03-22 22:31:37,468 - INFO - Buffer Size: 2500
+2026-03-22 22:31:37,468 - INFO - Mean Recent Reward: 0.5986
+2026-03-22 22:31:37,468 - INFO - Std Recent Reward: 0.0723
+2026-03-22 22:31:37,468 - INFO - Max Recent Reward: 0.7324
+2026-03-22 22:31:37,468 - INFO - Min Recent Reward: 0.4741
+2026-03-22 22:31:37,468 - INFO - Mean All Reward: 0.4752
+2026-03-22 22:31:37,468 - INFO - 
+Learning Curve (every 100 txns):
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 1: 0.3521
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 2: 0.3697
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 3: 0.3787
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 4: 0.3874
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 5: 0.3924
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 6: 0.4033
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 7: 0.4121
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 8: 0.4226
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 9: 0.4376
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 10: 0.4461
+2026-03-22 22:31:37,468 - INFO -   Checkpoint 11: 0.4485
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 12: 0.4648
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 13: 0.4766
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 14: 0.4870
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 15: 0.4967
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 16: 0.5024
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 17: 0.5134
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 18: 0.5247
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 19: 0.5333
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 20: 0.5462
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 21: 0.5610
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 22: 0.5657
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 23: 0.5727
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 24: 0.5852
+2026-03-22 22:31:37,470 - INFO -   Checkpoint 25: 0.5986
+2026-03-22 22:31:37,470 - INFO - 
+Total Improvement: +0.2465 (+70.0%)
+2026-03-22 22:31:37,472 - INFO - 
+\u2713 Training completed successfully!
