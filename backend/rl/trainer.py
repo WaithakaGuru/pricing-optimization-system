@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Callable, Dict, List
 import json
 from datetime import datetime
+from collections import deque
 from rl.environment.price_env import PriceOptimizationEnv
 
 logger = logging.getLogger(__name__)
@@ -326,3 +327,299 @@ class RLTrainer:
         """Load a saved checkpoint."""
         # TODO: Load agent weights
         logger.info(f"Loaded checkpoint {checkpoint_id}")
+
+
+class LiveTrainer:
+    """
+    Live training loop for deployed pricing agents.
+    
+    **Workflow:**
+    1. Observe POS transaction (price applied, quantity sold)
+    2. Extract state (product features, inventory, weather, etc.)
+    3. Calculate reward (revenue, margin, inventory impact)
+    4. Store (state, action, reward) in replay buffer
+    5. Periodically update agent (every N transactions)
+    6. Save checkpoints (daily or after N updates)
+    
+    **Features:**
+    - Non-blocking: operates alongside live sales
+    - Graceful learning: handles sparse feedback
+    - Drift detection: monitors performance degradation
+    - Checkpoint versioning: maintains model history
+    """
+
+    def __init__(
+        self,
+        agent,
+        reward_shaper,
+        state_builder,
+        config: Dict = None,
+        checkpoint_dir: str = "models/rl_checkpoints",
+        log_dir: str = "logs",
+    ):
+        """
+        Initialize live trainer.
+        
+        Args:
+            agent: RL agent (PPOAgent or SACAgent)
+            reward_shaper: RewardShaper for computing rewards
+            state_builder: StateBuilder for extracting state from transactions
+            config: Training config (update frequency, buffer size, etc.)
+            checkpoint_dir: Directory for model checkpoints
+            log_dir: Directory for logs
+        """
+        self.agent = agent
+        self.reward_shaper = reward_shaper
+        self.state_builder = state_builder
+        self.config = config or {}
+        
+        self.checkpoint_dir = Path(checkpoint_dir)
+        self.log_dir = Path(log_dir)
+        self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        self.log_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Hyperparameters
+        self.update_interval = self.config.get("update_interval", 50)  # Update every N transactions
+        self.buffer_capacity = self.config.get("buffer_capacity", 100_000)
+        self.batch_size = self.config.get("batch_size", 64)
+        self.checkpoint_interval = self.config.get("checkpoint_interval", 500)  # Save every N updates
+        
+        # State tracking
+        self.replay_buffer = []
+        self.transaction_count = 0
+        self.update_count = 0
+        self.prev_state = None
+        self.live_rewards = []
+        self.update_metrics = []
+        
+        # Performance tracking
+        self.performance_window = deque(maxlen=100)  # Last 100 transactions
+        
+        logger.info(f"LiveTrainer initialized (buffer_size={self.buffer_capacity}, update_interval={self.update_interval})")
+
+    def on_transaction(self, transaction: Dict):
+        """
+        Called when a new POS transaction occurs.
+        
+        Args:
+            transaction: Dict with keys:
+                - product_id: Product identifier
+                - price: Price at which item was sold
+                - quantity: Quantity sold
+                - timestamp: Transaction timestamp
+        """
+        try:
+            product_id = transaction["product_id"]
+            
+            # Extract state
+            state = self.state_builder.build_state(product_id)
+            
+            # Compute reward
+            reward = self.reward_shaper.compute_reward(
+                prev_state=self.prev_state,
+                action=transaction.get("price", 0.0),
+                curr_state=state,
+                transaction=transaction,
+            )
+            
+            # Store experience
+            experience = {
+                "product_id": product_id,
+                "state": state,
+                "action": transaction.get("price", 0.0),
+                "reward": reward,
+                "done": False,
+                "timestamp": transaction.get("timestamp", datetime.utcnow()),
+            }
+            
+            self.replay_buffer.append(experience)
+            self.transaction_count += 1
+            self.live_rewards.append(reward)
+            self.performance_window.append(reward)
+            
+            # Keep buffer size under control
+            if len(self.replay_buffer) > self.buffer_capacity:
+                self.replay_buffer.pop(0)
+            
+            # Update state for next transaction
+            self.prev_state = state
+            
+            # Periodic agent update
+            if self.transaction_count % self.update_interval == 0:
+                self._update_agent()
+                self.update_count += 1
+                
+                # Periodic checkpoint
+                if self.update_count % self.checkpoint_interval == 0:
+                    self._save_checkpoint()
+            
+            logger.debug(f"Transaction {self.transaction_count}: reward={reward:.3f}, buffer_size={len(self.replay_buffer)}")
+            
+        except Exception as e:
+            logger.error(f"Error processing transaction: {e}", exc_info=True)
+
+    def _update_agent(self):
+        """Update agent with buffered experiences."""
+        if len(self.replay_buffer) < self.batch_size:
+            logger.debug(f"Buffer too small ({len(self.replay_buffer)} < {self.batch_size}), skipping update")
+            return
+        
+        try:
+            # Sample batch from buffer
+            batch_indices = np.random.choice(len(self.replay_buffer), size=self.batch_size, replace=False)
+            batch = [self.replay_buffer[i] for i in batch_indices]
+            
+            # Prepare training data
+            states = np.array([exp["state"] for exp in batch])
+            actions = np.array([exp["action"] for exp in batch])
+            rewards = np.array([exp["reward"] for exp in batch])
+            
+            # Update agent
+            if hasattr(self.agent, 'update_from_batch'):
+                loss_info = self.agent.update_from_batch(states, actions, rewards)
+                
+                metric = {
+                    "update_num": self.update_count,
+                    "transaction_num": self.transaction_count,
+                    "batch_size": self.batch_size,
+                    "avg_batch_reward": float(np.mean(rewards)),
+                    "avg_recent_reward": float(np.mean(list(self.performance_window))),
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+                
+                if isinstance(loss_info, dict):
+                    metric.update(loss_info)
+                
+                self.update_metrics.append(metric)
+                
+                logger.info(
+                    f"Update {self.update_count} (txn {self.transaction_count}): "
+                    f"batch_reward={metric['avg_batch_reward']:.3f}, "
+                    f"recent_reward={metric['avg_recent_reward']:.3f}"
+                )
+            else:
+                logger.warning("Agent does not have update_from_batch method")
+                
+        except Exception as e:
+            logger.error(f"Error updating agent: {e}", exc_info=True)
+
+    def _save_checkpoint(self):
+        """Save agent checkpoint."""
+        try:
+            checkpoint_name = f"agent_v{self.update_count}.pt"
+            checkpoint_path = self.checkpoint_dir / checkpoint_name
+            
+            self.agent.save_checkpoint(str(checkpoint_path))
+            
+            logger.info(f"Checkpoint saved: {checkpoint_path}")
+            
+            # Also save live training metrics
+            metrics_path = self.log_dir / "live_training_metrics.json"
+            with open(metrics_path, "w") as f:
+                json.dump(self.update_metrics[-100:], f, indent=2)  # Last 100 updates
+                
+        except Exception as e:
+            logger.error(f"Failed to save checkpoint: {e}", exc_info=True)
+
+    def get_performance_summary(self) -> Dict:
+        """Get current performance metrics."""
+        if not self.live_rewards:
+            return {}
+        
+        recent_rewards = list(self.performance_window)
+        
+        return {
+            "total_transactions": self.transaction_count,
+            "total_updates": self.update_count,
+            "buffer_size": len(self.replay_buffer),
+            "mean_recent_reward": float(np.mean(recent_rewards)) if recent_rewards else 0.0,
+            "std_recent_reward": float(np.std(recent_rewards)) if len(recent_rewards) > 1 else 0.0,
+            "max_recent_reward": float(np.max(recent_rewards)) if recent_rewards else 0.0,
+            "min_recent_reward": float(np.min(recent_rewards)) if recent_rewards else 0.0,
+            "mean_all_reward": float(np.mean(self.live_rewards)),
+        }
+
+    def detect_drift(self, threshold: float = -0.10) -> bool:
+        """
+        Detect performance degradation (drift).
+        
+        Args:
+            threshold: Threshold for acceptable performance change (-10% by default)
+            
+        Returns:
+            True if drift detected, False otherwise
+        """
+        if len(self.live_rewards) < 200:
+            return False  # Not enough data
+        
+        old_perf = np.mean(self.live_rewards[-200:-100])
+        new_perf = np.mean(self.live_rewards[-100:])
+        
+        pct_change = (new_perf - old_perf) / (abs(old_perf) + 1e-6)
+        
+        if pct_change < threshold:
+            logger.warning(f"Performance drift detected: {pct_change:.2%}")
+            return True
+        
+        return False
+
+
+class ReplayBuffer:
+    """
+    Experience replay buffer for off-policy learning.
+    
+    Features:
+    - Prioritized experience samples frequent/recent transitions
+    - Memory efficient: circular buffer
+    - Supports variable-length episodes
+    """
+
+    def __init__(self, capacity: int = 100_000, priority_alpha: float = 0.6):
+        """
+        Initialize replay buffer.
+        
+        Args:
+            capacity: Maximum buffer size
+            priority_alpha: Prioritization strength (0=uniform, 1=full priority)
+        """
+        self.capacity = capacity
+        self.priority_alpha = priority_alpha
+        self.buffer: List[Dict] = []
+        self.priorities = np.array([], dtype=np.float32)
+        self.pos = 0
+
+    def add(self, experience: Dict, priority: float = 1.0):
+        """Add experience to buffer."""
+        if len(self.buffer) < self.capacity:
+            self.buffer.append(experience)
+            self.priorities = np.append(self.priorities, priority)
+        else:
+            self.buffer[self.pos] = experience
+            self.priorities[self.pos] = priority
+            self.pos = (self.pos + 1) % self.capacity
+
+    def sample(self, batch_size: int) -> List[Dict]:
+        """Sample batch with prioritization."""
+        if len(self.buffer) == 0:
+            return []
+        
+        # Compute probabilities
+        priorities = self.priorities[:len(self.buffer)]
+        probabilities = (priorities ** self.priority_alpha) / (priorities ** self.priority_alpha).sum()
+        
+        # Sample indices
+        indices = np.random.choice(len(self.buffer), size=min(batch_size, len(self.buffer)), 
+                                  p=probabilities, replace=False)
+        
+        return [self.buffer[i] for i in indices]
+
+    def clear(self):
+        """Clear the buffer."""
+        self.buffer.clear()
+        self.priorities = np.array([], dtype=np.float32)
+        self.pos = 0
+
+    @property
+    def size(self) -> int:
+        """Current buffer size."""
+        return len(self.buffer)
