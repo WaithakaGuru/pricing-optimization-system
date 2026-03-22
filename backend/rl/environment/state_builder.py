@@ -2,6 +2,7 @@
 import numpy as np
 import logging
 import sys
+import asyncio
 from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -14,6 +15,7 @@ if str(_backend_path) not in sys.path:
 
 try:
     from models import Product, InventoryItem, Transaction
+    from services.weather_service import WeatherService
 except ImportError:
     # If direct import fails, try relative from parent backend package
     import importlib.util
@@ -24,6 +26,13 @@ except ImportError:
     Product = models.Product
     InventoryItem = models.InventoryItem
     Transaction = models.Transaction
+    
+    # Import weather service
+    weather_path = Path(__file__).parent.parent.parent / "backend" / "services" / "weather_service.py"
+    spec_weather = importlib.util.spec_from_file_location("weather_service", weather_path)
+    weather_module = importlib.util.module_from_spec(spec_weather)
+    spec_weather.loader.exec_module(weather_module)
+    WeatherService = weather_module.WeatherService
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +51,26 @@ class StateBuilder:
      price_trend, demand_trend, seasonality, weather_factor, competitor_factor]
     """
 
-    def __init__(self, config: dict = None, db_url: str = "sqlite:///pricing.db"):
+    def __init__(self, config: dict = None, db_url: str = "sqlite:///pricing.db", 
+                 latitude: float = 40.7128, longitude: float = -74.0060):
         """
         Initialize state builder.
         
         Args:
             config: Optional configuration dict
             db_url: Database URL for fetching data
+            latitude: Location latitude for weather data (default NYC)
+            longitude: Location longitude for weather data (default NYC)
         """
         self.config = config or {}
         self.db_url = db_url
         self.engine = create_engine(db_url)
         self.Session = sessionmaker(bind=self.engine)
+        
+        # Initialize weather service
+        self.weather_service = WeatherService(latitude=latitude, longitude=longitude)
+        self._weather_data_cache = None
+        self._weather_data_timestamp = None
         
         self.feature_names = [
             "current_price",
@@ -205,20 +222,99 @@ class StateBuilder:
     def _get_seasonality_factor(self) -> float:
         """
         Get seasonality factor (-1 to 1).
-        Placeholder: use day-of-year for simplistic seasonality.
+        Uses day-of-year for simplistic seasonality.
         """
         day_of_year = datetime.utcnow().timetuple().tm_yday
         # Simple sine wave for seasonality
         import math
         return math.sin(2 * math.pi * day_of_year / 365.0)
 
+    async def _get_weather_factor_async(self) -> float:
+        """
+        Get weather factor (-1 to 1) from Open-Meteo API.
+        
+        Weather impact on demand:
+        - Clear/warm: +0.5 (comfortable shopping)
+        - Rain/cold: -0.5 (reduced foot traffic)
+        - Moderate temps: 0 (neutral)
+        
+        Returns:
+            Weather factor in range [-1, 1]
+        """
+        try:
+            weather_data = await self.weather_service.get_weather_for_state()
+            
+            if not weather_data:
+                logger.warning("Weather data unavailable, using neutral factor")
+                return 0.0
+            
+            # Temperature impact: ideal range [18-24°C]
+            temp_norm = weather_data.get("temperature", 0.5)  # Already normalized [0, 1]
+            temp_factor = 1.0 - abs(temp_norm - 0.5) * 2  # Peak at mid-range
+            
+            # Precipitation impact: negative for rain
+            precip_norm = weather_data.get("precipitation", 0.0)
+            precip_factor = -precip_norm  # Negative impact
+            
+            # Weather type modifier
+            weather_type = weather_data.get("weather_type", "clear")
+            type_modifiers = {
+                "clear": 0.3,
+                "cloudy": 0.0,
+                "foggy": -0.2,
+                "drizzle": -0.1,
+                "rain": -0.3,
+                "snow": -0.5,
+                "storm": -0.8,
+            }
+            type_factor = type_modifiers.get(weather_type, 0.0)
+            
+            # Combine factors
+            weather_factor = (temp_factor * 0.4 + precip_factor * 0.3 + type_factor * 0.3)
+            weather_factor = max(-1.0, min(1.0, weather_factor))  # Clamp to [-1, 1]
+            
+            logger.debug(f"Weather factor computed: {weather_factor:.2f} (temp={temp_norm:.2f}, precip={precip_norm:.2f}, type={weather_type})")
+            return weather_factor
+            
+        except Exception as e:
+            logger.warning(f"Failed to compute weather factor: {e}, using neutral")
+            return 0.0
+
     def _get_weather_factor(self) -> float:
         """
-        Get weather factor (-1 to 1).
-        Placeholder: returns 0 (neutral).
-        TODO: Integrate with Open-Meteo API for real weather data.
+        Get weather factor synchronously (wrapper for async method).
+        
+        This is used when building state in non-async contexts.
+        Falls back to cached value if available, otherwise returns neutral.
         """
-        return 0.0
+        # Check cache validity (5 minute TTL)
+        if self._weather_data_timestamp:
+            cache_age = (datetime.utcnow() - self._weather_data_timestamp).total_seconds()
+            if cache_age < 300:  # 5 minutes
+                return self._weather_data_cache or 0.0
+        
+        # Try to get fresh data asynchronously
+        try:
+            # Create new event loop if needed
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
+            if loop.is_running():
+                # Can't run async in a running loop, use cached value
+                logger.debug("Event loop running, using cached weather data")
+                return self._weather_data_cache or 0.0
+            
+            factor = loop.run_until_complete(self._get_weather_factor_async())
+            self._weather_data_cache = factor
+            self._weather_data_timestamp = datetime.utcnow()
+            return factor
+            
+        except Exception as e:
+            logger.debug(f"Could not fetch weather factor asynchronously: {e}")
+            return self._weather_data_cache or 0.0
 
     def _get_competitor_factor(self) -> float:
         """

@@ -25,6 +25,7 @@ class WeatherService:
         latitude: float = 40.7128,  # Default: NYC
         longitude: float = -74.0060,
         timeout: int = 10,
+        cache_ttl_seconds: int = 14400,  # 4 hours
     ):
         """
         Initialize weather service.
@@ -34,20 +35,32 @@ class WeatherService:
             latitude: Location latitude (default NYC)
             longitude: Location longitude (default NYC)
             timeout: Request timeout in seconds
+            cache_ttl_seconds: Cache time-to-live in seconds (default: 4 hours)
         """
         self.base_url = base_url
         self.latitude = latitude
         self.longitude = longitude
         self.timeout = timeout
         self.client = httpx.AsyncClient(timeout=timeout)
+        self.cache_ttl_seconds = cache_ttl_seconds
+        self._current_weather_cache = None
+        self._current_weather_timestamp = None
+        self._forecast_cache = None
+        self._forecast_timestamp = None
         
         logger.info(
-            f"WeatherService initialized for location ({latitude}, {longitude})"
+            f"WeatherService initialized for location ({latitude}, {longitude}) with {cache_ttl_seconds}s cache"
         )
+
+    def _is_cache_valid(self, timestamp: Optional[datetime]) -> bool:
+        """Check if cached data is still valid."""
+        if timestamp is None:
+            return False
+        return (datetime.utcnow() - timestamp).total_seconds() < self.cache_ttl_seconds
 
     async def get_current_weather(self) -> Optional[Dict]:
         """
-        Fetch current weather from Open-Meteo.
+        Fetch current weather from Open-Meteo (cached for 4 hours).
         
         Returns:
             Dict with temperature, humidity, precipitation, etc.
@@ -61,8 +74,14 @@ class WeatherService:
                 "timestamp": "2024-03-19T10:00:00Z"
             }
         """
+        # Return cached data if valid
+        if self._is_cache_valid(self._current_weather_timestamp):
+            logger.debug("Returning cached current weather")
+            return self._current_weather_cache
+        
         try:
-            url = f"{self.base_url}/current"
+            # Note: Open-Meteo uses /forecast endpoint with current parameter
+            url = f"{self.base_url}/forecast"
             params = {
                 "latitude": self.latitude,
                 "longitude": self.longitude,
@@ -85,16 +104,24 @@ class WeatherService:
                 "timezone": data.get("timezone"),
             }
             
-            logger.info(f"Current weather: {weather_dict['temperature']}°C, {weather_dict['weather_code']}")
+            # Cache the result
+            self._current_weather_cache = weather_dict
+            self._current_weather_timestamp = datetime.utcnow()
+            
+            logger.info(f"Fetched current weather: {weather_dict['temperature']}°C, code={weather_dict['weather_code']}")
             return weather_dict
             
         except Exception as e:
             logger.error(f"Failed to fetch current weather: {e}")
+            # Return cached data even if stale (graceful fallback)
+            if self._current_weather_cache is not None:
+                logger.warning("Returning stale cached weather due to fetch error")
+                return self._current_weather_cache
             return None
 
     async def get_weather_forecast(self, days: int = 7) -> Optional[List[Dict]]:
         """
-        Fetch weather forecast from Open-Meteo.
+        Fetch weather forecast from Open-Meteo (cached for 4 hours).
         
         Args:
             days: Number of days to forecast (1-16)
@@ -112,6 +139,11 @@ class WeatherService:
                 ...
             ]
         """
+        # Return cached data if valid
+        if self._is_cache_valid(self._forecast_timestamp):
+            logger.debug(f"Returning cached forecast ({len(self._forecast_cache)} days)")
+            return self._forecast_cache
+        
         try:
             days = min(max(days, 1), 16)  # Clamp to 1-16
             
@@ -146,11 +178,19 @@ class WeatherService:
                 for d, t_max, t_min, p, c in zip(dates, temps_max, temps_min, precip, codes)
             ]
             
-            logger.info(f"Forecast fetched: {len(forecast)} days")
+            # Cache the result
+            self._forecast_cache = forecast
+            self._forecast_timestamp = datetime.utcnow()
+            
+            logger.info(f"Fetched forecast: {len(forecast)} days")
             return forecast
             
         except Exception as e:
             logger.error(f"Failed to fetch weather forecast: {e}")
+            # Return cached data even if stale (graceful fallback)
+            if self._forecast_cache is not None:
+                logger.warning("Returning stale cached forecast due to fetch error")
+                return self._forecast_cache
             return None
 
     def interpret_weather_code(self, code: int) -> str:
@@ -195,7 +235,7 @@ class WeatherService:
         Returns:
             Dict with normalized weather features for state builder
             {
-                "temperature": 22.5,  # Celsius, normalized to [0, 1]
+                "temperature": 0.5,  # Normalized to [0, 1]
                 "humidity": 0.65,     # [0, 1]
                 "precipitation": 0.0, # [0, 1]
                 "weather_type": "rain" # categorical
@@ -206,7 +246,7 @@ class WeatherService:
         if not weather:
             logger.warning("Using default weather due to fetch failure")
             return {
-                "temperature": 20.0,
+                "temperature": 0.5,
                 "humidity": 0.5,
                 "precipitation": 0.0,
                 "weather_type": "clear",
