@@ -3,9 +3,11 @@ from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+from pathlib import Path
 from services.pricing_service import PricingService
 from services.weather_service import WeatherService
 from utils.logger import get_logger
+from utils.checkpoint_manager import find_latest_checkpoint, list_checkpoints, get_checkpoint_info
 from models import get_session, Product, PriceHistory
 
 logger = get_logger(__name__)
@@ -60,9 +62,16 @@ async def get_price_recommendation(
                 detail=f"Invalid agent_type. Must be one of: ppo, sac, bandit"
             )
         
-        # Initialize pricing service with specified agent
+        # Find latest trained checkpoint for agent type
+        checkpoint_path = find_latest_checkpoint(agent_type)
+        if checkpoint_path:
+            logger.info(f"Using trained checkpoint: {checkpoint_path}")
+        else:
+            logger.warning(f"No trained checkpoint found for {agent_type}, using untrained agent")
+        
+        # Initialize pricing service with specified agent and checkpoint
         logger.info(f"Getting recommendation for {product_id} using {agent_type} agent")
-        service = PricingService(agent_type=agent_type)
+        service = PricingService(agent_type=agent_type, checkpoint_path=checkpoint_path)
         
         # Get recommendation
         recommendation = service.get_recommendation(product_id)
@@ -247,4 +256,76 @@ async def get_current_price(product_id: str) -> dict:
         raise
     except Exception as e:
         logger.error(f"Error fetching current price: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/checkpoints/list", response_model=dict)
+async def list_available_checkpoints() -> dict:
+    """
+    List all available trained agent checkpoints.
+    
+    Returns information about all trained models organized by agent type,
+    including filenames, reward scores, and modification times.
+    """
+    try:
+        checkpoints = list_checkpoints()
+        
+        formatted_response = {}
+        for agent_type, checkpoints_list in checkpoints.items():
+            formatted_response[agent_type] = [
+                {
+                    "filename": cp["filename"],
+                    "reward_score": get_checkpoint_info(cp["path"]).get("reward_score") 
+                        if get_checkpoint_info(cp["path"]) else None,
+                    "modified_timestamp": cp["modified"]
+                }
+                for cp in checkpoints_list
+            ]
+        
+        logger.info(f"Listed {sum(len(v) for v in formatted_response.values())} checkpoints")
+        return {
+            "checkpoints": formatted_response,
+            "total_count": sum(len(v) for v in checkpoints.values())
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing checkpoints: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/checkpoints/latest/{agent_type}", response_model=dict)
+async def get_latest_checkpoint(agent_type: str) -> dict:
+    """
+    Get the latest trained checkpoint for a specific agent type.
+    
+    - **agent_type**: Agent type (ppo, sac, bandit)
+    """
+    try:
+        if agent_type not in ["ppo", "sac", "bandit"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid agent_type. Must be one of: ppo, sac, bandit"
+            )
+        
+        checkpoint_path = find_latest_checkpoint(agent_type)
+        
+        if not checkpoint_path:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No checkpoint found for agent type: {agent_type}"
+            )
+        
+        checkpoint_info = get_checkpoint_info(checkpoint_path)
+        
+        return {
+            "agent_type": agent_type,
+            "filename": Path(checkpoint_path).name,
+            "path": checkpoint_path,
+            "reward_score": checkpoint_info.get("reward_score") if checkpoint_info else None
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching latest checkpoint: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

@@ -164,6 +164,17 @@ def train_live_synthetic(
         improvement = metrics_history[-1]['mean_recent_reward'] - metrics_history[0]['mean_recent_reward']
         logger.info(f"\nTotal Improvement: {improvement:+.4f} ({improvement/metrics_history[0]['mean_recent_reward']*100:+.1f}%)")
     
+    # Save checkpoint
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    mean_reward = final_summary['mean_recent_reward']
+    checkpoint_path = f"{checkpoint_dir}/{agent_type}_{timestamp}_reward{mean_reward:.3f}.pt"
+    
+    try:
+        agent.save_checkpoint(checkpoint_path)
+        logger.info(f"\n✓ Checkpoint saved to: {checkpoint_path}")
+    except Exception as e:
+        logger.warning(f"Failed to save checkpoint: {e}")
+    
     return final_summary
 
 
