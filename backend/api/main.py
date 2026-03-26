@@ -1,7 +1,7 @@
 """FastAPI application factory."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import prices_router, inventory_router, pos_router, agent_router, dashboard_router, products_router
+from .routes import prices_router, inventory_router, pos_router, agent_router, dashboard_router, products_router
 import logging
 
 logger = logging.getLogger(__name__)

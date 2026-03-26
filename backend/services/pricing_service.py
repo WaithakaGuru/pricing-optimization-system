@@ -110,7 +110,9 @@ class PricingService:
             # Get agent recommendation
             if self.agent_type in ["ppo", "sac"]:
                 # Use deterministic action (mean) for inference
-                action, _, _ = self.agent.select_action(state, deterministic=True)
+                result = self.agent.select_action(state, deterministic=True)
+                # PPO returns (action, log_prob, value), SAC returns (action, log_prob)
+                action = result[0]
                 confidence = 0.9  # High confidence for deterministic
             else:  # bandit
                 arm = self.agent.select_arm(state, epsilon=0.0)  # Greedy
@@ -132,9 +134,24 @@ class PricingService:
             # Build factors dict for explanation
             factors = self._extract_state_factors(product_id, state)
             
+            # CRITICAL: Constrain recommended price to product's bounds
+            # Agent may output values outside [min_price, max_price] due to global scaling
+            recommended_price = np.clip(
+                float(action),
+                float(product.min_price),
+                float(product.max_price)
+            )
+            
+            logger.debug(
+                f"Price recommendation: {product_id} - "
+                f"Agent output: ${action:.2f}, "
+                f"Constrained to: ${recommended_price:.2f} "
+                f"(bounds: ${product.min_price:.2f} - ${product.max_price:.2f})"
+            )
+            
             return {
                 "product_id": product_id,
-                "recommended_price": float(action),
+                "recommended_price": float(recommended_price),
                 "current_price": float(current_price),
                 "agent": self.agent_type,
                 "confidence": float(confidence),

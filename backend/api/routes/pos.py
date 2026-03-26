@@ -79,28 +79,48 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
         pricing_service = PricingService(agent_type="ppo")
         inventory_service = InventoryService()
         
-        # Generate unique transaction ID BEFORE processing items
-        transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}-{str(uuid4())[:8]}"
+        # Consolidate items by product_id (combine duplicates)
+        # e.g., [cabbage x1, tomato x2, cabbage x1] → [cabbage x2, tomato x2]
+        consolidated_items = {}
+        for item in transaction.items:
+            if item.product_id not in consolidated_items:
+                consolidated_items[item.product_id] = {
+                    'product_id': item.product_id,
+                    'product_name': item.product_name,
+                    'quantity': 0,
+                    'price': item.price,  # Use price from first occurrence
+                    'subtotal': 0
+                }
+            consolidated_items[item.product_id]['quantity'] += item.quantity
+            consolidated_items[item.product_id]['subtotal'] += item.subtotal or (item.quantity * item.price)
+        
+        # Generate base transaction ID (used for grouping related items)
+        base_transaction_id = f"TXN-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         recorded_items = []
         items_for_inventory = []
+        transaction_ids = []  # Track all transaction IDs for this purchase
         
-        # Step 1: Record all transactions in database
-        for idx, item in enumerate(transaction.items):
+        # Step 1: Record consolidated transactions in database
+        for idx, (product_id, consolidated_item) in enumerate(consolidated_items.items()):
             # Verify product exists
-            product = session.query(Product).filter(Product.id == item.product_id).first()
+            product = session.query(Product).filter(Product.id == product_id).first()
             if not product:
                 session.rollback()
                 session.close()
-                raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
+                raise HTTPException(status_code=404, detail=f"Product {product_id} not found")
             
-            # Create individual transaction record for each item
+            # Generate UNIQUE transaction ID for each distinct product
+            transaction_id = f"{base_transaction_id}-{idx}-{str(uuid4())[:8]}"
+            transaction_ids.append(transaction_id)
+            
+            # Create one transaction record per unique product (consolidated quantity)
             trans = Transaction(
-                id=transaction_id,  # Use pre-generated ID
-                product_id=item.product_id,
-                quantity=item.quantity,
-                price=item.price,
-                revenue=item.subtotal or (item.quantity * item.price),
-                total=item.subtotal or (item.quantity * item.price),
+                id=transaction_id,  # One ID per product type
+                product_id=product_id,
+                quantity=consolidated_item['quantity'],  # Consolidated quantity
+                price=consolidated_item['price'],
+                revenue=consolidated_item['subtotal'],
+                total=consolidated_item['subtotal'],
                 payment_method=transaction.payment_method,
                 notes=transaction.notes,
                 timestamp=datetime.now()
@@ -108,15 +128,22 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
             session.add(trans)
             session.flush()
             
-            recorded_items.append(item)
+            # Add consolidated item to response
+            recorded_items.append(TransactionItem(
+                product_id=product_id,
+                product_name=consolidated_item['product_name'],
+                quantity=consolidated_item['quantity'],
+                price=consolidated_item['price'],
+                subtotal=consolidated_item['subtotal']
+            ))
             items_for_inventory.append({
-                'product_id': item.product_id,
-                'quantity': item.quantity,
-                'price': item.price,
-                'revenue': item.subtotal or (item.quantity * item.price)
+                'product_id': product_id,
+                'quantity': consolidated_item['quantity'],
+                'price': consolidated_item['price'],
+                'revenue': consolidated_item['subtotal']
             })
             
-            logger.info(f"  Item: {item.product_id} x{item.quantity} @ ${item.price} = ${item.subtotal or (item.quantity * item.price)}")
+            logger.info(f"  Item: {product_id} x{consolidated_item['quantity']} @ ${consolidated_item['price']} = ${consolidated_item['subtotal']}")
         
         # Commit the main transaction FIRST
         session.commit()
@@ -137,9 +164,9 @@ async def record_transaction(transaction: TransactionRequest) -> TransactionResp
             # Note: Transaction is already recorded in database (Step 1 above)
             # No need for duplicate record from pricing service
         
-        logger.info(f"[OK] Transaction {transaction_id} recorded successfully with {len(recorded_items)} items")
+        logger.info(f"[OK] Transaction {base_transaction_id} recorded successfully with {len(consolidated_items)} unique items (IDs: {transaction_ids})")
         return TransactionResponse(
-            transaction_id=str(transaction_id),
+            transaction_id=str(base_transaction_id),  # Return the base transaction ID for grouping
             items=recorded_items,
             total=transaction.total,
             timestamp=datetime.now().isoformat(),

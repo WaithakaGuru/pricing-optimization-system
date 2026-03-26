@@ -26,6 +26,9 @@ class RewardShaper:
         profit_weight: float = 0.3,
         inventory_weight: float = 0.1,
         demand_weight: float = 0.1,
+        price_sanity_weight: float = 0.2,
+        min_price: float = 0.1,
+        max_price: float = 1000.0,
     ):
         """
         Initialize reward shaper.
@@ -35,11 +38,17 @@ class RewardShaper:
             profit_weight: Weight for profit component
             inventory_weight: Weight for inventory management
             demand_weight: Weight for demand fulfillment
+            price_sanity_weight: Weight for price sanity checks (NEW)
+            min_price: Product minimum price (product-aware)
+            max_price: Product maximum price (product-aware)
         """
         self.revenue_weight = revenue_weight
         self.profit_weight = profit_weight
         self.inventory_weight = inventory_weight
         self.demand_weight = demand_weight
+        self.price_sanity_weight = price_sanity_weight
+        self.min_price = min_price
+        self.max_price = max_price
 
     def compute_reward(
         self,
@@ -125,6 +134,31 @@ class RewardShaper:
             demand_penalty = self.demand_weight * 0.3
             reward -= demand_penalty
         
+        # 5. PRICE SANITY CHECK (NEW) - Prevent extreme pricing strategies
+        # Get current price from state if available
+        current_price = 50.0  # Default fallback
+        if prev_state is not None and len(prev_state) > 0:
+            # prev_state[0] is typically normalized current_price, denormalize it
+            # Assuming normalization range [0.1, 1000]
+            current_price = float(prev_state[0]) * 900 + 0.1 if isinstance(prev_state[0], (int, float)) else 50.0
+        
+        # Penalize prices that exceed reasonable markup
+        if action > current_price * 1.5:
+            # More than 50% markup from current price
+            markup_ratio = (action - current_price) / current_price
+            markup_penalty = min(markup_ratio / 2.0, 1.0)  # Cap at 1.0
+            price_sanity_penalty = self.price_sanity_weight * markup_penalty
+            reward -= price_sanity_penalty
+            logger.debug(f"Price markup penalty: {price_sanity_penalty:.3f} (price {action:.2f} vs current {current_price:.2f})")
+        
+        # Penalize prices that are too low (below cost recovery)
+        cost_per_unit = transaction.get("cost_per_unit", 0.0)
+        if cost_per_unit > 0 and action < cost_per_unit * 0.9:
+            # Price below 90% of cost = loss
+            loss_penalty = self.price_sanity_weight * 0.5
+            reward -= loss_penalty
+            logger.debug(f"Unsafe low price penalty: {loss_penalty:.3f} (price {action:.2f} vs cost {cost_per_unit:.2f})")
+        
         # Clip reward to [-1, 1]
         reward = np.clip(reward, -1.0, 1.0)
         
@@ -170,6 +204,9 @@ class RewardShaper:
             "profit_weight": self.profit_weight,
             "inventory_weight": self.inventory_weight,
             "demand_weight": self.demand_weight,
+            "price_sanity_weight": self.price_sanity_weight,
+            "min_price": self.min_price,
+            "max_price": self.max_price,
         }
 
     def set_config(self, config: Dict):
@@ -178,5 +215,8 @@ class RewardShaper:
         self.profit_weight = config.get("profit_weight", self.profit_weight)
         self.inventory_weight = config.get("inventory_weight", self.inventory_weight)
         self.demand_weight = config.get("demand_weight", self.demand_weight)
+        self.price_sanity_weight = config.get("price_sanity_weight", self.price_sanity_weight)
+        self.min_price = config.get("min_price", self.min_price)
+        self.max_price = config.get("max_price", self.max_price)
         
         logger.info(f"RewardShaper config updated: {self.get_config()}")
