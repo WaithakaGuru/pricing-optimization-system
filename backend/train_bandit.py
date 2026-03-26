@@ -14,15 +14,15 @@ print("CONTEXTUAL BANDIT TRAINING (Phase 1)")
 print("=" * 70)
 
 # Load synthetic data
-print("\n📥 Loading synthetic data...")
+print("\n[LOADING] Loading synthetic data...")
 try:
     load_synthetic_data_into_db()
-    print("✅ Data loaded\n")
+    print("[OK] Data loaded\n")
 except Exception as e:
-    print(f"⚠️  {e}\n")
+    print(f"[WARNING] {e}\n")
 
 # Create environment and bandit
-print("🎮 Initializing environment and bandit...")
+print("[INIT] Initializing environment and bandit...")
 env = PriceOptimizationEnv(
     product_id="PROD-001",
     config={
@@ -42,8 +42,8 @@ bandit = ContextualBandit(
     price_max=50.0,
 )
 
-print(f"✅ Environment ready")
-print(f"✅ Bandit ready (Algorithm: {bandit.algorithm}, Arms: {bandit.n_arms})")
+print(f"[OK] Environment ready")
+print(f"[OK] Bandit ready (Algorithm: {bandit.algorithm}, Arms: {bandit.n_arms})")
 print(f"   Prices to try: {[f'${p:.2f}' for p in bandit.prices]}\n")
 
 # Training loop
@@ -94,7 +94,7 @@ print("=" * 70)
 # Final statistics
 stats = bandit.get_statistics()
 
-print(f"\n📊 Final Statistics:")
+print(f"\n[STATS] Final Statistics:")
 print(f"   Total pulls: {stats['total_pulls']}")
 print(f"   Best price found: ${stats['best_price']:.2f}")
 print(f"   Best average reward: {stats['best_reward']:.3f}")
@@ -108,7 +108,7 @@ for i, price in enumerate(bandit.prices):
     print(f"   {marker} ${price:5.2f}: {pulls:3.0f} pulls ({pct:5.1f}%) | "
           f"Avg Reward={value:+.3f}")
 
-print(f"\n✨ Insights:")
+print(f"\n[INSIGHTS] Insights:")
 print(f"   - Bandit tried all {bandit.n_arms} prices")
 print(f"   - Concentrated pulls on ${stats['best_price']:.2f} (highest reward)")
 print(f"   - This is Phase 1: Fast learning without deep RL")
@@ -127,7 +127,7 @@ results = {
     "arm_counts": [int(c) for c in stats['arm_counts']],
 }
 
-print(f"\n💾 Results saved for further analysis")
+print(f"\n[SAVED] Results saved for further analysis")
 print("\n" + "=" * 70)
-print("✅ Phase 1 Complete! Ready for Phase 2 (PPO/SAC)")
+print("[OK] Phase 1 Complete! Ready for Phase 2 (PPO/SAC)")
 print("=" * 70)

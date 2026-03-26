@@ -22,11 +22,11 @@ class RewardShaper:
 
     def __init__(
         self,
-        revenue_weight: float = 0.5,
-        profit_weight: float = 0.3,
-        inventory_weight: float = 0.1,
+        revenue_weight: float = 0.4,
+        profit_weight: float = 0.25,
+        inventory_weight: float = 0.15,
         demand_weight: float = 0.1,
-        price_sanity_weight: float = 0.2,
+        price_sanity_weight: float = 0.1,
         min_price: float = 0.1,
         max_price: float = 1000.0,
     ):
@@ -34,13 +34,16 @@ class RewardShaper:
         Initialize reward shaper.
         
         Args:
-            revenue_weight: Weight for revenue component
-            profit_weight: Weight for profit component
-            inventory_weight: Weight for inventory management
-            demand_weight: Weight for demand fulfillment
-            price_sanity_weight: Weight for price sanity checks (NEW)
+            revenue_weight: Weight for revenue component (0.4)
+            profit_weight: Weight for profit component (0.25)
+            inventory_weight: Weight for inventory management (0.15)
+            demand_weight: Weight for demand fulfillment (0.1)
+            price_sanity_weight: Weight for price sanity checks (0.1)
             min_price: Product minimum price (product-aware)
             max_price: Product maximum price (product-aware)
+        
+        Note: Weights sum to 1.0 to prevent reward saturation. Allows agents to 
+        learn proper price discrimination instead of always achieving ~1.0 reward.
         """
         self.revenue_weight = revenue_weight
         self.profit_weight = profit_weight

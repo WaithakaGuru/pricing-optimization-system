@@ -5,6 +5,7 @@ import type { InventoryItem } from "../types";
 import StockBadge, { getStockStatus } from "../components/inventory/StockBadge";
 import StockBar from "../components/inventory/StockBar";
 import AdjustModal from "../components/inventory/AdjustModal";
+import ProductForm from "../components/products/ProductForm";
 
 type Filter = "all" | "critical" | "low" | "ok" | "overstock";
 
@@ -18,6 +19,7 @@ export default function InventoryPage() {
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<InventoryItem | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showForm, setShowForm] = useState(false);
 
   // Handle responsive layout
   useEffect(() => {
@@ -95,6 +97,26 @@ export default function InventoryPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Product Form Modal/Section */}
+      {showForm && (
+        <ProductForm
+          onSuccess={() => {
+            setShowForm(false);
+            // Reload inventory after successful product creation
+            async function reloadItems() {
+              try {
+                const data = await inventoryApi.list();
+                setItems(data);
+              } catch (err) {
+                console.error("Failed to reload inventory:", err);
+              }
+            }
+            reloadItems();
+          }}
+          onCancel={() => setShowForm(false)}
+        />
+      )}
+
       {/* Error notice */}
       {error && (
         <ErrorNotice message={error} onRetry={() => window.location.reload()} />
@@ -139,58 +161,66 @@ export default function InventoryPage() {
       )}
 
       {/* Controls */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-50 max-w-xs">
-          <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
-            width="13"
-            height="13"
-            viewBox="0 0 16 16"
-            fill="none"
-          >
-            <circle
-              cx="7"
-              cy="7"
-              r="5"
-              stroke="currentColor"
-              strokeWidth="1.5"
+      <div className="flex items-center gap-3 flex-wrap justify-between">
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          <div className="relative flex-1 min-w-50 max-w-xs">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+              width="13"
+              height="13"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <circle
+                cx="7"
+                cy="7"
+                r="5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+              <path
+                d="M11 11l3 3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search products…"
+              className="w-full h-9 pl-8 pr-3 border border-border rounded-md bg-surface text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
             />
-            <path
-              d="M11 11l3 3"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search products…"
-            className="w-full h-9 pl-8 pr-3 border border-border rounded-md bg-surface text-sm text-text-primary placeholder:text-text-tertiary outline-none focus:border-accent transition-colors"
-          />
-        </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {(["all", "critical", "low", "ok", "overstock"] as Filter[]).map(
-            (f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
-                  filter === f
-                    ? "bg-accent-light] border-accent] text-accent"
-                    : "bg-surface border-border text-text-secondary hover:border-accent hover:text-accent"
-                }`}
-              >
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-accent/15 text-accent" : "bg-surface-2 text-text-tertiary"}`}
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {(["all", "critical", "low", "ok", "overstock"] as Filter[]).map(
+              (f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
+                    filter === f
+                      ? "bg-accent-light] border-accent] text-accent"
+                      : "bg-surface border-border text-text-secondary hover:border-accent hover:text-accent"
+                  }`}
                 >
-                  {counts[f]}
-                </span>
-              </button>
-            ),
-          )}
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-accent/15 text-accent" : "bg-surface-2 text-text-tertiary"}`}
+                  >
+                    {counts[f]}
+                  </span>
+                </button>
+              ),
+            )}
+          </div>
         </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium text-sm"
+        >
+          {showForm ? "Cancel" : "+ Add Product"}
+        </button>
       </div>
 
       {/* Table */}

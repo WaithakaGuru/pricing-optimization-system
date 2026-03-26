@@ -68,10 +68,10 @@ class ModelTrainer:
         
         try:
             cmd = [
-                "python", "train_agent_synthetic_v2.py",
-                "--agent_type", "ppo",
-                "--episodes", str(self.episodes),
-                "--save_every", "50"
+                "python", "train_agent.py",
+                "--agent", "PPO",
+                "--mode", "episodic",
+                "--episodes", str(self.episodes)
             ]
             
             logger.info(f"Running: {' '.join(cmd)}")
@@ -107,10 +107,10 @@ class ModelTrainer:
         
         try:
             cmd = [
-                "python", "train_agent_synthetic_v2.py",
-                "--agent_type", "sac",
-                "--episodes", str(self.episodes),
-                "--save_every", "50"
+                "python", "train_agent.py",
+                "--agent", "SAC",
+                "--mode", "episodic",
+                "--episodes", str(self.episodes)
             ]
             
             logger.info(f"Running: {' '.join(cmd)}")
@@ -185,7 +185,7 @@ class ModelTrainer:
         self.start_time = datetime.now()
         logger.info("\n" + "🚀" * 40)
         logger.info("STARTING UNIFIED MODEL TRAINING ORCHESTRATOR")
-        logger.info(f"Agents: {', '.join(agents.upper())}")
+        logger.info(f"Agents: {', '.join([a.upper() for a in agents])}")
         logger.info(f"Episodes per agent: {self.episodes}")
         logger.info(f"Cleanup weaker checkpoints: {self.cleanup}")
         logger.info("🚀" * 40)

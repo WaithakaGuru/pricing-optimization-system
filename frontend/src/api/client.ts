@@ -58,6 +58,22 @@ export const posApi = {
 
 export const productsApi = {
   list: () => req<Product[]>("/api/products"),
+  create: (data: {
+    id: string;
+    name: string;
+    cost_price: number;
+    min_price: number;
+    max_price: number;
+    current_price: number;
+    initial_quantity: number;
+    reorder_point: number;
+    reorder_quantity: number;
+    warehouse_location: string;
+  }) =>
+    req<Product>("/api/products", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 };
 
 export const dashboardApi = {
