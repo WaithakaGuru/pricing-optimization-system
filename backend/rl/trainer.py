@@ -156,11 +156,15 @@ class RLTrainer:
             self.total_steps += 1
             
             # Store experience
-            if training and hasattr(self.agent, 'store_experience'):
-                self.agent.store_experience(state, action, reward, log_prob, value, done)
-            elif training and hasattr(self.agent, 'store_experience'):
-                # SAC: store different format
-                self.agent.store_experience(state, action, reward, next_state, done)
+            if training:
+                # Check agent type to call correct store_experience signature
+                agent_class_name = type(self.agent).__name__
+                if agent_class_name == "SACAgent":
+                    # SAC: off-policy, needs next_state
+                    self.agent.store_experience(state, action, reward, next_state, done)
+                else:
+                    # PPO/other: on-policy, needs log_prob and value
+                    self.agent.store_experience(state, action, reward, log_prob, value, done)
             
             # Track metrics
             metrics["prices_selected"].append(float(action))
@@ -223,18 +227,31 @@ class RLTrainer:
 
     def _save_checkpoint(self, episode: int, is_best: bool = False):
         """
-        Save agent checkpoint and metrics.
+        Save agent checkpoint with proper naming convention.
+        
+        Checkpoint naming: {agent_type}_{timestamp}_reward{score}.pt
+        Example: PPO_20260327_120534_reward154.32.pt
         
         Args:
             episode: Episode number
-            is_best: If True, save as best checkpoint
+            is_best: If True, also save as best checkpoint
         """
-        suffix = "_best" if is_best else f"_{episode}"
-        checkpoint_path = self.checkpoint_dir / f"agent{suffix}.pt"
+        # Get agent type from class name (PPOAgent -> PPO, SACAgent -> SAC)
+        agent_type = type(self.agent).__name__.replace("Agent", "")
+        
+        # Get current best reward for this episode
+        current_reward = self.best_reward if self.best_reward != -np.inf else 0.0
+        
+        # Create timestamp
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        
+        # Build checkpoint filename
+        checkpoint_name = f"{agent_type}_{timestamp}_reward{current_reward:.3f}.pt"
+        checkpoint_path = self.checkpoint_dir / checkpoint_name
         
         try:
             self.agent.save_checkpoint(str(checkpoint_path))
-            logger.info(f"Checkpoint saved: {checkpoint_path}")
+            logger.info(f"Checkpoint saved: {checkpoint_path.name} (reward: {current_reward:.3f})")
         except Exception as e:
             logger.error(f"Failed to save checkpoint: {e}")
 

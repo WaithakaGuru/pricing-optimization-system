@@ -98,13 +98,13 @@ print(f"\n[STATS] Final Statistics:")
 print(f"   Total pulls: {stats['total_pulls']}")
 print(f"   Best price found: ${stats['best_price']:.2f}")
 print(f"   Best average reward: {stats['best_reward']:.3f}")
-print(f"\n💰 Price Exploration:")
+print(f"\n[PRICES] Price Exploration:")
 
 for i, price in enumerate(bandit.prices):
     pulls = stats['arm_counts'][i]
     value = stats['arm_values'][i]
     pct = stats['pull_distribution'][i] * 100
-    marker = "⭐" if i == stats['best_arm'] else "  "
+    marker = "[BEST]" if i == stats['best_arm'] else "      "
     print(f"   {marker} ${price:5.2f}: {pulls:3.0f} pulls ({pct:5.1f}%) | "
           f"Avg Reward={value:+.3f}")
 
@@ -128,6 +128,38 @@ results = {
 }
 
 print(f"\n[SAVED] Results saved for further analysis")
+
+# Save checkpoint
+import os
+from datetime import datetime
+from pathlib import Path
+
+checkpoint_dir = Path(__file__).parent / "models" / "rl_checkpoints"
+checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+reward_score = stats['best_reward']
+checkpoint_name = f"BANDIT_{timestamp}_reward{reward_score:.3f}.pt"
+checkpoint_path = checkpoint_dir / checkpoint_name
+
+# Save bandit state as JSON (since Bandit doesn't use torch models)
+checkpoint_data = {
+    "type": "ContextualBandit",
+    "algorithm": stats['algorithm'],
+    "n_arms": bandit.n_arms,
+    "prices": [float(p) for p in bandit.prices],
+    "arm_counts": [int(c) for c in stats['arm_counts']],
+    "arm_values": [float(v) for v in stats['arm_values']],
+    "best_arm": int(stats['best_arm']),
+    "best_reward": float(reward_score),
+    "total_pulls": int(stats['total_pulls']),
+    "timestamp": timestamp,
+}
+
+with open(str(checkpoint_path), 'w') as f:
+    json.dump(checkpoint_data, f, indent=2)
+
+print(f"[OK] Checkpoint saved: {checkpoint_name}")
 print("\n" + "=" * 70)
 print("[OK] Phase 1 Complete! Ready for Phase 2 (PPO/SAC)")
 print("=" * 70)

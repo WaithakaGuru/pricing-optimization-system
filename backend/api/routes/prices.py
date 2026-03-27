@@ -42,25 +42,44 @@ class PriceHistoryEntry(BaseModel):
 @router.get("/recommend/{product_id}", response_model=PriceRecommendation)
 async def get_price_recommendation(
     product_id: str,
-    agent_type: str = Query("ppo", description="Agent type: ppo, sac, or bandit"),
+    agent_type: str = Query("sac", description="Agent type: sac (recommended), ppo, or bandit"),
     include_weather: bool = Query(True, description="Include weather impact analysis")
 ) -> PriceRecommendation:
     """
     Get AI-powered price recommendation for a product.
     
-    - **product_id**: The product identifier
-    - **agent_type**: Type of agent to use (ppo, sac, bandit)
-    - **include_weather**: Include weather impact in response (default: true)
+    Uses trained RL agents to recommend optimal prices based on:
+    - Current market conditions
+    - Inventory levels
+    - Demand patterns
+    - Weather impact
     
-    Returns a recommendation with confidence score and explanation factors.
+    **Agent Selection:**
+    - **sac** (default): Best performance (156.29 reward) - recommended for production
+    - **ppo**: Alternative model (153.97 reward) - use for A/B testing
+    - **bandit**: Fallback only (0.897 reward) - use if SAC/PPO unavailable
+    
+    Args:
+        product_id: The product identifier
+        agent_type: Type of agent to use (sac, ppo, or bandit) - defaults to sac
+        include_weather: Include weather impact in response (default: true)
+    
+    Returns:
+        PriceRecommendation with confidence score and explanation factors
     """
     try:
         # Validate agent type
         if agent_type not in ["ppo", "sac", "bandit"]:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid agent_type. Must be one of: ppo, sac, bandit"
+                detail=f"Invalid agent_type. Must be one of: sac (recommended), ppo, or bandit"
             )
+        
+        # Log agent selection
+        if agent_type == "sac":
+            logger.info(f"[RECOMMENDED] Using SAC agent for {product_id}")
+        else:
+            logger.warning(f"Using {agent_type} agent (not recommended - SAC preferred)")
         
         # Find latest trained checkpoint for agent type
         checkpoint_path = find_latest_checkpoint(agent_type)

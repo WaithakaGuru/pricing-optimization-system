@@ -178,7 +178,7 @@ class SACAgent:
         self,
         state: np.ndarray,
         deterministic: bool = False,
-    ) -> Tuple[np.ndarray, float]:
+    ) -> Tuple[np.ndarray, float, float]:
         """
         Select action (price) using current policy.
         
@@ -189,6 +189,7 @@ class SACAgent:
         Returns:
             action: Continuous price action
             log_prob: Log probability (None if deterministic)
+            value: Q-value estimate from first Q-network (for compatibility with PPO interface)
         """
         with torch.no_grad():
             state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
@@ -200,13 +201,17 @@ class SACAgent:
                 action, _ = self.actor.sample(state_tensor)
                 log_prob = 0.0
             
+            # Estimate value from Q1 network
+            q_value = self.q1(state_tensor, action).squeeze().cpu().numpy()
+            value = float(q_value) if isinstance(q_value, np.ndarray) else float(q_value)
+            
             # Scale action from [-1, 1] to price range [0.1, 1000]
             action = action.squeeze().cpu().numpy()
             action = self._scale_action(action)
             # Convert to Python float
             action = float(action) if isinstance(action, np.ndarray) else float(action)
         
-        return action, log_prob
+        return action, log_prob, value
 
     def store_experience(
         self,
