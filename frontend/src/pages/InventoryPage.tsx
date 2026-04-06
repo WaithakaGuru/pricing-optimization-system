@@ -167,7 +167,7 @@ export default function InventoryPage() {
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
                 <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-accent/15 text-accent" : "bg-surface-2] text-text-tertiary"}`}
+                  className={`text-[10px] px-1.5 py-0.5 rounded-full ${filter === f ? "bg-accent/15 text-accent" : "bg-surface-2 text-text-tertiary"}`}
                 >
                   {counts[f]}
                 </span>
@@ -181,7 +181,7 @@ export default function InventoryPage() {
       <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden">
         {/* thead */}
         <div
-          className="grid px-6 py-2.5 bg-surface-2] border-b border-border text-[10.5px] font-semibold uppercase tracking-widest text-text-tertiary items-center"
+          className="grid px-6 py-2.5 bg-surface-2 border-b border-border text-[10.5px] font-semibold uppercase tracking-widest text-text-tertiary items-center"
           style={{ gridTemplateColumns: COL }}
         >
           <span>Product</span>
@@ -207,7 +207,7 @@ export default function InventoryPage() {
             return (
               <div
                 key={item.id}
-                className="grid items-center px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2] transition-colors animate-fade-up"
+                className="grid items-center px-6 py-3.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors animate-fade-up"
                 style={{
                   gridTemplateColumns: COL,
                   animationDelay: `${i * 30}ms`,

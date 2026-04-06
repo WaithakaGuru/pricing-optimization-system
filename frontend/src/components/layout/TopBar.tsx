@@ -20,8 +20,8 @@ export default function TopBar() {
   });
 
   return (
-    <header className="h-16 md:h-18 bg-white border-b border-border-2 flex items-center justify-between px-4 md:px-7 sticky top-0 z-40 shadow-sm">
-      <div className="flex items-center gap-3">
+    <header className="h-16 md:h-18 bg-white border-b border-border-2 flex items-center justify-between px-4 md:px-7 sticky top-0 z-50 shadow-sm">
+      <div className="flex items-center gap-3 min-w-0">
         {/* Mobile menu toggle */}
         <button
           onClick={toggleSidebar}

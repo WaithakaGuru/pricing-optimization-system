@@ -192,10 +192,7 @@ export default function POSPage() {
         </div>
 
         {/* Main 2-col - grows to fill available space */}
-        <div
-          className="grid gap-4 flex-1"
-          style={{ gridTemplateColumns: "1fr 320px" }}
-        >
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4 flex-1">
           <div className="max-h-180 relative overflow-y-auto flex flex-col bg-surface] border border-border rounded-2xl shadow-xs p-4">
             <ProductGrid
               products={products}

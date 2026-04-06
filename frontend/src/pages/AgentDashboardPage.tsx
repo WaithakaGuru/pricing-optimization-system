@@ -237,7 +237,9 @@ export function AgentDashboardPage() {
                   onChange={(e) => setAutoRefresh(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">Auto-refresh</span>
+                <span className="text-xs md:text-sm text-gray-600 whitespace-nowrap">
+                  Auto-refresh
+                </span>
               </label>
             </div>
           </div>
@@ -336,7 +338,9 @@ export function AgentDashboardPage() {
                   {/* Metrics */}
                   <div className="mt-4 space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-xs md:text-sm text-gray-600">Reward</span>
+                      <span className="text-xs md:text-sm text-gray-600">
+                        Reward
+                      </span>
                       <span className="font-semibold text-gray-900 text-sm md:text-base">
                         {agent.reward?.toFixed(2) || "N/A"}
                       </span>
@@ -435,7 +439,10 @@ export function AgentDashboardPage() {
               {/* Mobile card view */}
               <div className="md:hidden space-y-3">
                 {checkpoints.map((checkpoint, idx) => (
-                  <div key={idx} className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                  <div
+                    key={idx}
+                    className="bg-gray-50 p-4 rounded-lg border border-gray-100"
+                  >
                     <div className="flex justify-between items-start mb-3">
                       <span className="font-semibold text-gray-900 uppercase text-sm">
                         {checkpoint.agent}
@@ -447,7 +454,9 @@ export function AgentDashboardPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Episodes:</span>
-                        <span className="text-gray-700 font-medium">{checkpoint.episodes}</span>
+                        <span className="text-gray-700 font-medium">
+                          {checkpoint.episodes}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Date:</span>
@@ -571,7 +580,10 @@ export function AgentDashboardPage() {
                 </h3>
                 <ul className="space-y-2">
                   {recommendations.monitoring.map((point, idx) => (
-                    <li key={idx} className="flex gap-2 text-xs md:text-sm text-gray-700">
+                    <li
+                      key={idx}
+                      className="flex gap-2 text-xs md:text-sm text-gray-700"
+                    >
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded border-gray-300 mt-0.5 flex-shrink-0"

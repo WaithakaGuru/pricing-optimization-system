@@ -43,10 +43,10 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:sticky top-16 md:top-0 left-0 h-[calc(100vh-64px)] md:h-screen w-58 bg-surface border-r border-border flex flex-col z-40 transition-transform duration-300 ease-in-out ${
+        className={`hidden sticky top-0 left-0 h-screen w-58 bg-surface border-r border-border md:flex flex-col z-40 transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         }`}
-        style={{ width: "232px" }}
+        // style={{ width: "232px" }}
       >
         {/* Mobile close button */}
         <button
@@ -54,7 +54,9 @@ export default function Sidebar() {
           className="md:hidden flex items-center justify-between px-5 py-4 border-b border-border hover:bg-surface-2 transition-colors"
           aria-label="Close navigation"
         >
-          <span className="text-sm font-semibold tracking-widest text-text-primary uppercase">Menu</span>
+          <span className="text-sm font-semibold tracking-widest text-text-primary uppercase">
+            Menu
+          </span>
           <X className="w-5 h-5 text-text-primary" />
         </button>
 
