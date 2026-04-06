@@ -79,32 +79,47 @@ def find_latest_checkpoint(agent_type: str = None) -> Optional[str]:
     Returns:
         Full path to the latest checkpoint, or None if no checkpoint found.
     """
+    logger.debug(f"Searching for checkpoint with agent_type={agent_type}")
+    
     if not CHECKPOINTS_DIR.exists():
-        logger.warning(f"Checkpoints directory not found: {CHECKPOINTS_DIR}")
+        logger.warning(f"❌ Checkpoints directory not found: {CHECKPOINTS_DIR}")
         return None
+    
+    logger.debug(f"Checkpoints directory exists: {CHECKPOINTS_DIR}")
     
     # Get all checkpoint files
     checkpoint_files = list(CHECKPOINTS_DIR.glob("*.pt"))
     
+    logger.debug(f"Found {len(checkpoint_files)} checkpoint files total")
+    if checkpoint_files:
+        for f in checkpoint_files:
+            logger.debug(f"  - {f.name}")
+    
     if not checkpoint_files:
-        logger.warning(f"No checkpoints found in {CHECKPOINTS_DIR}")
+        logger.warning(f"❌ No checkpoints found in {CHECKPOINTS_DIR}")
         return None
     
     # Filter by agent type if specified
     if agent_type:
+        logger.debug(f"Filtering for agent_type: {agent_type}")
         checkpoint_files = [
             f for f in checkpoint_files 
             if f.name.lower().startswith(agent_type.lower())
         ]
         
+        logger.debug(f"Found {len(checkpoint_files)} checkpoints for {agent_type}")
+        if checkpoint_files:
+            for f in checkpoint_files:
+                logger.debug(f"  - {f.name}")
+        
         if not checkpoint_files:
-            logger.warning(f"No checkpoints found for agent type: {agent_type}")
+            logger.warning(f"❌ No checkpoints found for agent type: {agent_type}")
             return None
     
     # Sort by modification time (most recent last)
     latest_checkpoint = max(checkpoint_files, key=lambda f: f.stat().st_mtime)
     
-    logger.info(f"Found latest checkpoint: {latest_checkpoint.name}")
+    logger.info(f"✅ Found latest checkpoint: {latest_checkpoint.name}")
     return str(latest_checkpoint)
 
 

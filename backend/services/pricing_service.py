@@ -54,23 +54,38 @@ class PricingService:
         """Initialize RL agent."""
         try:
             if agent_type == "ppo":
+                logger.info(f"Initializing PPO agent with state_dim=12, action_dim=1")
                 agent = PPOAgent(state_dim=12, action_dim=1, hidden_dim=128)
                 if checkpoint_path:
-                    agent.load_checkpoint(checkpoint_path)
+                    logger.info(f"Loading PPO checkpoint from: {checkpoint_path}")
+                    try:
+                        agent.load_checkpoint(checkpoint_path)
+                        logger.info(f"✅ PPO checkpoint loaded successfully")
+                    except Exception as load_err:
+                        logger.error(f"❌ Failed to load PPO checkpoint: {load_err}", exc_info=True)
+                        raise
             elif agent_type == "sac":
+                logger.info(f"Initializing SAC agent with state_dim=12, action_dim=1")
                 agent = SACAgent(state_dim=12, action_dim=1, hidden_dim=128)
                 if checkpoint_path:
-                    agent.load_checkpoint(checkpoint_path)
+                    logger.info(f"Loading SAC checkpoint from: {checkpoint_path}")
+                    try:
+                        agent.load_checkpoint(checkpoint_path)
+                        logger.info(f"✅ SAC checkpoint loaded successfully")
+                    except Exception as load_err:
+                        logger.error(f"❌ Failed to load SAC checkpoint: {load_err}", exc_info=True)
+                        raise
             elif agent_type == "bandit":
+                logger.info(f"Initializing Bandit agent with n_arms=30")
                 agent = ContextualBandit(n_arms=30, algorithm="ucb")
             else:
                 raise ValueError(f"Unknown agent type: {agent_type}")
             
-            logger.info(f"Agent {agent_type} initialized successfully")
+            logger.info(f"✅ Agent {agent_type} initialized successfully")
             return agent
             
         except Exception as e:
-            logger.error(f"Failed to initialize agent: {e}")
+            logger.error(f"❌ Failed to initialize agent {agent_type}: {e}", exc_info=True)
             return None
 
     def get_recommendation(self, product_id: str) -> Optional[Dict]:
@@ -97,27 +112,34 @@ class PricingService:
         """
         try:
             if not self.agent:
-                logger.error("Agent not initialized")
+                logger.error(f"❌ Agent not initialized for product {product_id}")
                 return None
             
+            logger.debug(f"Building state for product {product_id}")
             # Build state from current conditions
             state = self.state_builder.build_state(product_id)
             
             if state is None or not isinstance(state, np.ndarray):
-                logger.warning(f"Could not build state for {product_id}")
+                logger.warning(f"❌ Could not build state for {product_id} (agent not available?)")
                 return None
+            
+            logger.debug(f"State built successfully, shape: {state.shape}")
             
             # Get agent recommendation
             if self.agent_type in ["ppo", "sac"]:
+                logger.debug(f"Getting {self.agent_type.upper()} action for {product_id}")
                 # Use deterministic action (mean) for inference
                 result = self.agent.select_action(state, deterministic=True)
                 # PPO returns (action, log_prob, value), SAC returns (action, log_prob)
                 action = result[0]
                 confidence = 0.9  # High confidence for deterministic
+                logger.debug(f"Agent action: ${action:.2f}, confidence: {confidence}")
             else:  # bandit
+                logger.debug(f"Getting Bandit action for {product_id}")
                 arm = self.agent.select_arm(state, epsilon=0.0)  # Greedy
                 action = self.agent.prices[arm]
                 confidence = 0.7  # Lower confidence for multi-arm
+                logger.debug(f"Bandit arm selected: {arm}, price: ${action:.2f}")
             
             # Get current price for comparison
             with Session(self.engine) as session:
@@ -126,10 +148,12 @@ class PricingService:
                 ).first()
                 
                 if not product:
-                    logger.error(f"Product not found: {product_id}")
+                    logger.error(f"❌ Product not found in database: {product_id}")
                     return None
                 
                 current_price = product.current_price
+            
+            logger.debug(f"Product {product_id}: current_price=${current_price:.2f}")
             
             # Build factors dict for explanation
             factors = self._extract_state_factors(product_id, state)
@@ -142,8 +166,8 @@ class PricingService:
                 float(product.max_price)
             )
             
-            logger.debug(
-                f"Price recommendation: {product_id} - "
+            logger.info(
+                f"✅ Price recommendation: {product_id} - "
                 f"Agent output: ${action:.2f}, "
                 f"Constrained to: ${recommended_price:.2f} "
                 f"(bounds: ${product.min_price:.2f} - ${product.max_price:.2f})"

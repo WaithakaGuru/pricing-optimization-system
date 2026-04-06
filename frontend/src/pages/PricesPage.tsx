@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAsync } from "../hooks";
 import { pricesApi, productsApi } from "../api/client";
 import type { PriceRecommendation } from "../types";
@@ -46,7 +46,11 @@ export default function PricesPage() {
   } = useAsync(() => productsApi.list(), true);
 
   // Load recommendations for displayed products
-  const { data: recommendations = [], loading: loadingRec } = useAsync(
+  const {
+    data: recommendations = [],
+    loading: loadingRec,
+    refetch: refetchRecommendations,
+  } = useAsync(
     async () => {
       if (!products?.length) return [];
       try {
@@ -62,16 +66,14 @@ export default function PricesPage() {
   );
 
   // Trigger recommendations fetch when products load
-  const { refetch: refetchRecommendations } = useAsync(async () => null, false);
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (products?.length) {
       refetchRecommendations();
     }
   }, [products?.length, refetchRecommendations]);
 
-  // Filter and sort products
-  const filtered = (products || [])
+  // Filter and sort products (hybrid: recommendations first, then all others)
+  const allFiltered = (products || [])
     .filter(
       (p) =>
         p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -82,7 +84,10 @@ export default function PricesPage() {
       recommendation: (recommendations || []).find(
         (r) => r.product_id === p.id,
       ),
-    }))
+    }));
+
+  // Separate into two groups
+  const withRecommendations = allFiltered
     .filter((p) => p.recommendation)
     .sort((a, b) => {
       if (sortBy === "name") {
@@ -113,6 +118,19 @@ export default function PricesPage() {
       return 0;
     });
 
+  const withoutRecommendations = allFiltered
+    .filter((p) => !p.recommendation)
+    .sort((a, b) => {
+      if (sortBy === "name") {
+        return a.name.localeCompare(b.name);
+      }
+      if (sortBy === "current_price") {
+        return b.current_price - a.current_price;
+      }
+      return 0;
+    });
+
+  const filtered = [...withRecommendations, ...withoutRecommendations];
   const selectedData = filtered.find((p) => p.id === selectedProduct);
 
   if (productsError) {
@@ -198,80 +216,170 @@ export default function PricesPage() {
           <p className="text-text-tertiary">No products match your search</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((product) => {
-            const rec = product.recommendation!;
-            const changePercent =
-              ((rec.recommended_price - rec.current_price) /
-                rec.current_price) *
-              100;
-            const isPositive = changePercent > 0;
+        <>
+          {/* Section 1: Products with Recommendations */}
+          {withRecommendations.length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary mb-4">
+                AI Price Recommendations ({withRecommendations.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {withRecommendations.map((product) => {
+                  const rec = product.recommendation!;
+                  const changePercent =
+                    ((rec.recommended_price - rec.current_price) /
+                      rec.current_price) *
+                    100;
+                  const isPositive = changePercent > 0;
 
-            return (
-              <button
-                key={product.id}
-                onClick={() => setSelectedProduct(product.id)}
-                className={`p-4 rounded-xl transition-all text-left ${
-                  selectedProduct === product.id
-                    ? "bg-accent-light border-2 border-accent shadow-md"
-                    : "bg-surface border border-border hover:border-accent hover:shadow-md"
-                }`}
-              >
-                {/* Product Name and ID */}
-                <div className="mb-3">
-                  <h3 className="font-semibold text-text-primary truncate">
-                    {product.name}
-                  </h3>
-                  <p className="text-xs text-text-tertiary">{product.id}</p>
-                </div>
-
-                {/* Price Comparison */}
-                <div className="space-y-2 mb-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-text-tertiary">Current</span>
-                    <span className="font-medium text-text-primary">
-                      ${rec.current_price.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-accent">Recommended</span>
-                    <span
-                      className={`font-semibold ${
-                        isPositive ? "text-green-600" : "text-amber-600"
+                  return (
+                    <button
+                      key={product.id}
+                      onClick={() => setSelectedProduct(product.id)}
+                      className={`p-4 rounded-xl transition-all text-left ${
+                        selectedProduct === product.id
+                          ? "bg-accent-light border-2 border-accent shadow-md"
+                          : "bg-surface border border-border hover:border-accent hover:shadow-md"
                       }`}
                     >
-                      ${rec.recommended_price.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
+                      {/* Product Name and ID */}
+                      <div className="mb-3">
+                        <h3 className="font-semibold text-text-primary truncate">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-text-tertiary">
+                          {product.id}
+                        </p>
+                      </div>
 
-                {/* Change and Confidence */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
-                  <div>
-                    <p className="text-xs text-text-tertiary">Change</p>
-                    <p
-                      className={`text-sm font-semibold ${
-                        isPositive ? "text-green-600" : "text-amber-600"
-                      }`}
-                    >
-                      {isPositive ? "+" : ""}
-                      {changePercent.toFixed(1)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-text-tertiary">Confidence</p>
-                    <p className="text-sm font-semibold text-accent">
-                      {(rec.confidence * 100).toFixed(0)}%
-                    </p>
-                  </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                      {/* Price Comparison */}
+                      <div className="space-y-2 mb-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-text-tertiary">
+                            Current
+                          </span>
+                          <span className="font-medium text-text-primary">
+                            ${rec.current_price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-accent">
+                            Recommended
+                          </span>
+                          <span
+                            className={`font-semibold ${
+                              isPositive ? "text-green-600" : "text-amber-600"
+                            }`}
+                          >
+                            ${rec.recommended_price.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Change and Confidence */}
+                      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
+                        <div>
+                          <p className="text-xs text-text-tertiary">Change</p>
+                          <p
+                            className={`text-sm font-semibold ${
+                              isPositive ? "text-green-600" : "text-amber-600"
+                            }`}
+                          >
+                            {isPositive ? "+" : ""}
+                            {changePercent.toFixed(1)}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-text-tertiary">
+                            Confidence
+                          </p>
+                          <p className="text-sm font-semibold text-accent">
+                            {(rec.confidence * 100).toFixed(0)}%
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Section 2: Products without Recommendations */}
+          {withoutRecommendations.length > 0 && (
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary mb-4">
+                All Products ({withoutRecommendations.length})
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {withoutRecommendations.map((product) => (
+                  <button
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product.id)}
+                    className={`p-4 rounded-xl transition-all text-left ${
+                      selectedProduct === product.id
+                        ? "bg-blue-50 border-2 border-accent shadow-md"
+                        : "bg-surface border border-border hover:border-accent hover:shadow-md"
+                    }`}
+                  >
+                    {/* Product Name and ID */}
+                    <div className="mb-3">
+                      <h3 className="font-semibold text-text-primary truncate">
+                        {product.name}
+                      </h3>
+                      <p className="text-xs text-text-tertiary">{product.id}</p>
+                    </div>
+
+                    {/* Current Price */}
+                    <div className="space-y-2 mb-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-text-tertiary">
+                          Current Price
+                        </span>
+                        <span className="font-medium text-text-primary">
+                          ${product.current_price.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-text-tertiary">
+                          Range
+                        </span>
+                        <span className="text-sm text-text-secondary">
+                          ${product.min_price.toFixed(2)} - $
+                          {product.max_price.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Cost and Margin */}
+                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
+                      <div>
+                        <p className="text-xs text-text-tertiary">Cost</p>
+                        <p className="text-sm font-semibold text-text-primary">
+                          ${product.cost_price.toFixed(2)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-text-tertiary">Margin</p>
+                        <p className="text-sm font-semibold text-green-600">
+                          {(
+                            ((product.current_price - product.cost_price) /
+                              product.current_price) *
+                            100
+                          ).toFixed(0)}
+                          %
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Detailed View */}
+      {/* Detailed View - With Recommendation */}
       {selectedData && selectedData.recommendation && (
         <div className="bg-surface border border-border rounded-2xl shadow-xs p-6 mt-6">
           <h2 className="text-xl font-semibold text-text-primary mb-6">
@@ -335,6 +443,63 @@ export default function PricesPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Detailed View - Without Recommendation */}
+      {selectedData && !selectedData.recommendation && (
+        <div className="bg-surface border border-border rounded-2xl shadow-xs p-6 mt-6">
+          <h2 className="text-xl font-semibold text-text-primary mb-6">
+            {selectedData.name} - Product Details
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
+                Current Price
+              </div>
+              <div className="text-2xl font-bold text-text-primary">
+                ${selectedData.current_price.toFixed(2)}
+              </div>
+            </div>
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
+                Cost
+              </div>
+              <div className="text-2xl font-bold text-text-primary">
+                ${selectedData.cost_price.toFixed(2)}
+              </div>
+            </div>
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
+                Margin
+              </div>
+              <div className="text-2xl font-bold text-green-600">
+                {(
+                  ((selectedData.current_price - selectedData.cost_price) /
+                    selectedData.current_price) *
+                  100
+                ).toFixed(0)}
+                %
+              </div>
+            </div>
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
+                Price Range
+              </div>
+              <div className="text-sm font-bold text-text-primary">
+                ${selectedData.min_price.toFixed(2)} - $
+                {selectedData.max_price.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+            <p className="text-sm text-blue-900">
+              No price recommendation available yet. The AI agent will analyze
+              this product's performance and provide recommendations soon.
+            </p>
+          </div>
         </div>
       )}
     </div>

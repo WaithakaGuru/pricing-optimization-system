@@ -5,8 +5,6 @@ interface CategoryChartProps {
 }
 
 export default function CategoryChart({ data = [] }: CategoryChartProps) {
-  const total = data.reduce((s, d) => s + d.value, 0);
-
   return (
     <div className="bg-surface border border-border rounded-2xl p-6 shadow-xs h-full">
       <h2 className="text-sm font-semibold text-text-primary mb-5">

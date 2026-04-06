@@ -68,8 +68,13 @@ async def get_price_recommendation(
         PriceRecommendation with confidence score and explanation factors
     """
     try:
+        logger.info(f"\n{'='*80}")
+        logger.info(f"🔍 PRICE RECOMMENDATION REQUEST: product_id={product_id}, agent={agent_type}")
+        logger.info(f"{'='*80}")
+        
         # Validate agent type
         if agent_type not in ["ppo", "sac", "bandit"]:
+            logger.error(f"❌ Invalid agent_type: {agent_type}")
             raise HTTPException(
                 status_code=400,
                 detail=f"Invalid agent_type. Must be one of: sac (recommended), ppo, or bandit"
@@ -77,25 +82,37 @@ async def get_price_recommendation(
         
         # Log agent selection
         if agent_type == "sac":
-            logger.info(f"[RECOMMENDED] Using SAC agent for {product_id}")
+            logger.info(f"✅ [RECOMMENDED] Using SAC agent for {product_id}")
         else:
-            logger.warning(f"Using {agent_type} agent (not recommended - SAC preferred)")
+            logger.warning(f"⚠️  Using {agent_type} agent (not recommended - SAC preferred)")
         
         # Find latest trained checkpoint for agent type
+        logger.info(f"🔎 Searching for latest {agent_type.upper()} checkpoint...")
         checkpoint_path = find_latest_checkpoint(agent_type)
         if checkpoint_path:
-            logger.info(f"Using trained checkpoint: {checkpoint_path}")
+            logger.info(f"✅ Found checkpoint: {checkpoint_path}")
         else:
-            logger.warning(f"No trained checkpoint found for {agent_type}, using untrained agent")
+            logger.warning(f"❌ No trained checkpoint found for {agent_type}, will try untrained agent")
         
         # Initialize pricing service with specified agent and checkpoint
-        logger.info(f"Getting recommendation for {product_id} using {agent_type} agent")
+        logger.info(f"⚙️  Initializing PricingService with {agent_type} agent...")
         service = PricingService(agent_type=agent_type, checkpoint_path=checkpoint_path)
         
+        if not service.agent:
+            logger.error(f"❌ PricingService failed to initialize agent - returning error")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to initialize {agent_type} agent. Check backend logs."
+            )
+        
+        logger.info(f"✅ PricingService initialized successfully")
+        
         # Get recommendation
+        logger.info(f"🤖 Requesting recommendation from agent...")
         recommendation = service.get_recommendation(product_id)
         
         if not recommendation:
+            logger.error(f"❌ Agent returned None for {product_id}")
             raise HTTPException(
                 status_code=404,
                 detail=f"Could not generate recommendation for product {product_id}"
@@ -139,6 +156,12 @@ async def get_price_recommendation(
                 logger.warning(f"Could not fetch weather data: {e}")
                 # Continue without weather data
         
+        logger.info(f"✅ SUCCESS: Recommendation for {product_id}")
+        logger.info(f"  Current Price: ${recommendation['current_price']:.2f}")
+        logger.info(f"  Recommended Price: ${recommendation['recommended_price']:.2f}")
+        logger.info(f"  Confidence: {recommendation['confidence']:.0%}")
+        logger.info(f"{'='*80}\n")
+        
         return PriceRecommendation(
             product_id=recommendation["product_id"],
             current_price=recommendation["current_price"],
@@ -153,7 +176,8 @@ async def get_price_recommendation(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting price recommendation: {e}", exc_info=True)
+        logger.error(f"❌ ERROR getting price recommendation: {e}", exc_info=True)
+        logger.info(f"{'='*80}\n")
         raise HTTPException(status_code=500, detail=str(e))
 
 
