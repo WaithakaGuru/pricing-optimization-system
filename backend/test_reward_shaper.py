@@ -22,7 +22,7 @@ print("=" * 60)
 print("TEST 1: Good Outcome (Price ↑, Sales Good)")
 print("=" * 60)
 state_1 = {
-    "product_id": "PROD-001",
+    "product_id": "p0001",
     "current_price": 10.0,
     "cost_price": 6.0,
     "inventory_level": 100,
@@ -47,7 +47,7 @@ print("=" * 60)
 print("TEST 2: Bad Outcome (Price ↓, Excess Inventory)")
 print("=" * 60)
 state_2 = {
-    "product_id": "PROD-001",
+    "product_id": "p0001",
     "current_price": 10.0,
     "cost_price": 6.0,
     "inventory_level": 500,  # Very high inventory
@@ -72,7 +72,7 @@ print("=" * 60)
 print("TEST 3: Margin Below Minimum (Unsustainable)")
 print("=" * 60)
 state_3 = {
-    "product_id": "PROD-001",
+    "product_id": "p0001",
     "current_price": 10.0,
     "cost_price": 6.0,
     "inventory_level": 100,
@@ -97,7 +97,7 @@ print("=" * 60)
 print("TEST 4: Optimal Scenario (Balanced)")
 print("=" * 60)
 state_4 = {
-    "product_id": "PROD-001",
+    "product_id": "p0001",
     "current_price": 10.0,
     "cost_price": 6.0,
     "inventory_level": 60,

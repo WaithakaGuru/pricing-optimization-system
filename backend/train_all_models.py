@@ -59,6 +59,7 @@ class ModelTrainer:
         self.results = {}
         self.training_log = []
         self.start_time = None
+        self.trained_agents = []  # Track which agents were trained
         
     def train_ppo(self) -> Tuple[bool, str]:
         """Train PPO agent."""
@@ -75,13 +76,13 @@ class ModelTrainer:
             ]
             
             logger.info(f"Running: {' '.join(cmd)}")
-            result = subprocess.run(cmd, cwd=Path(__file__).parent, capture_output=True, text=True)
+            result = subprocess.run(cmd, cwd=Path(__file__).parent)
             
             if result.returncode != 0:
-                logger.error(f"PPO training failed:\n{result.stderr}")
-                return False, result.stderr
+                logger.error(f"PPO training failed with return code {result.returncode}")
+                return False, f"Training failed with code {result.returncode}"
             
-            logger.info(result.stdout)
+            logger.info("PPO training process completed")
             
             # Extract best checkpoint info
             best_ckpt = find_best_checkpoint("ppo")
@@ -114,13 +115,13 @@ class ModelTrainer:
             ]
             
             logger.info(f"Running: {' '.join(cmd)}")
-            result = subprocess.run(cmd, cwd=Path(__file__).parent, capture_output=True, text=True)
+            result = subprocess.run(cmd, cwd=Path(__file__).parent)
             
             if result.returncode != 0:
-                logger.error(f"SAC training failed:\n{result.stderr}")
-                return False, result.stderr
+                logger.error(f"SAC training failed with return code {result.returncode}")
+                return False, f"Training failed with code {result.returncode}"
             
-            logger.info(result.stdout)
+            logger.info("SAC training process completed")
             
             # Extract best checkpoint info
             best_ckpt = find_best_checkpoint("sac")
@@ -147,17 +148,17 @@ class ModelTrainer:
         try:
             cmd = [
                 "python", "train_bandit.py",
-                "--episodes", str(min(self.episodes, 100)),  # Bandit trains faster
+                "--episodes", str(self.episodes),
             ]
             
             logger.info(f"Running: {' '.join(cmd)}")
-            result = subprocess.run(cmd, cwd=Path(__file__).parent, capture_output=True, text=True)
+            result = subprocess.run(cmd, cwd=Path(__file__).parent)
             
             if result.returncode != 0:
-                logger.error(f"Bandit training failed:\n{result.stderr}")
-                return False, result.stderr
+                logger.error(f"Bandit training failed with return code {result.returncode}")
+                return False, f"Training failed with code {result.returncode}"
             
-            logger.info(result.stdout)
+            logger.info("Bandit training process completed")
             
             # Extract best checkpoint info
             best_ckpt = find_best_checkpoint("bandit")
@@ -183,6 +184,7 @@ class ModelTrainer:
             agents: List of agent types to train (ppo, sac, bandit)
         """
         self.start_time = datetime.now()
+        self.trained_agents = agents  # Track which agents were trained
         logger.info("\n" + "🚀" * 40)
         logger.info("STARTING UNIFIED MODEL TRAINING ORCHESTRATOR")
         logger.info(f"Agents: {', '.join([a.upper() for a in agents])}")
@@ -210,11 +212,14 @@ class ModelTrainer:
             else:
                 logger.warning(f"Unknown agent type: {agent}")
         
-        # Cleanup weaker checkpoints
+        # Cleanup weaker checkpoints - ONLY for agents that were actually trained
         if self.cleanup:
             logger.info("\n" + "🧹" * 40)
-            cleanup_results = cleanup_all_weaker_checkpoints(self.keep_top_n)
-            for agent_type, (deleted, remaining) in cleanup_results.items():
+            logger.info(f"Cleaning up checkpoints for trained agents: {', '.join([a.upper() for a in self.trained_agents])}")
+            
+            # Only cleanup checkpoints for agents that were trained
+            for agent_type in [a.lower() for a in self.trained_agents]:
+                deleted, remaining = cleanup_all_weaker_checkpoints(self.keep_top_n, agent_type=agent_type)
                 logger.info(f"  {agent_type.upper()}: Deleted {deleted} weaker checkpoints, keeping {remaining}")
         
         # Print summary

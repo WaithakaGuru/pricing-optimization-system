@@ -68,7 +68,7 @@ class AgentEvaluator:
             logger.info(f"✓ Initialized fresh {self.agent_type} agent (no checkpoint)")
         
         # Create environment
-        self.env = PriceOptimizationEnv()
+        self.env = PriceOptimizationEnv(product_id="p0001")
         logger.info("✓ Initialized PriceOptimizationEnv")
     
     def evaluate_episode(self, num_steps: int = 252, deterministic: bool = True) -> Dict:

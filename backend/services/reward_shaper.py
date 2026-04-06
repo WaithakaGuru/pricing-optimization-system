@@ -81,12 +81,17 @@ class RewardShaper:
         quantity = transaction.get("quantity", 0)
         price = action
         
+        # NOTE: We reward PROFIT, not raw revenue!
+        # Raw revenue reward causes agents to maximize price (ignoring quantity/demand).
+        # Instead, we should reward profitable transactions.
         if quantity > 0:
-            # Reward increases with revenue, normalized
-            revenue = quantity * price
-            max_possible_revenue = 20 * 200  # Max quantity × max price
-            revenue_norm = min(revenue / max_possible_revenue, 1.0)
-            revenue_reward = self.revenue_weight * revenue_norm
+            # Revenue component is PROFIT-based, not price-based
+            # This prevents agents from gaming the system by raising prices infinitely
+            cost_per_unit = transaction.get("cost_per_unit", 50.0)
+            profit = quantity * (price - cost_per_unit)
+            max_possible_profit = 20 * 150  # Max qty × max profit per unit
+            profit_norm = min(profit / max_possible_profit, 1.0) if max_possible_profit > 0 else 0
+            revenue_reward = self.revenue_weight * profit_norm
             reward += revenue_reward
         
         # 2. Profit component (if cost available)
@@ -137,30 +142,55 @@ class RewardShaper:
             demand_penalty = self.demand_weight * 0.3
             reward -= demand_penalty
         
-        # 5. PRICE SANITY CHECK (NEW) - Prevent extreme pricing strategies
+        # 5. PRICE SANITY CHECK - Prevent extreme pricing strategies
         # Get current price from state if available
         current_price = 50.0  # Default fallback
         if prev_state is not None and len(prev_state) > 0:
-            # prev_state[0] is typically normalized current_price, denormalize it
-            # Assuming normalization range [0.1, 1000]
+            # prev_state[0] is typically normalized current_price
             current_price = float(prev_state[0]) * 900 + 0.1 if isinstance(prev_state[0], (int, float)) else 50.0
         
-        # Penalize prices that exceed reasonable markup
-        if action > current_price * 1.5:
-            # More than 50% markup from current price
-            markup_ratio = (action - current_price) / current_price
-            markup_penalty = min(markup_ratio / 2.0, 1.0)  # Cap at 1.0
-            price_sanity_penalty = self.price_sanity_weight * markup_penalty
-            reward -= price_sanity_penalty
-            logger.debug(f"Price markup penalty: {price_sanity_penalty:.3f} (price {action:.2f} vs current {current_price:.2f})")
+        # CRITICAL: Penalize prices that deviate far from current price
+        # Reasonable pricing <= 15% change from current price
+        # Excessive pricing (> 30% change) gets heavy penalty
         
-        # Penalize prices that are too low (below cost recovery)
+        price_change_pct = (action - current_price) / current_price if current_price > 0 else 0
+        
+        if price_change_pct > 0.30:
+            # More than 30% markup is unreasonable
+            # HEAVY penalty: 0.3 - 0.5 reward points
+            excessive_markup_penalty = min((price_change_pct - 0.30) / 0.40, 1.0)  # Scale 30-70% range
+            price_sanity_penalty = 0.3 * excessive_markup_penalty  # 0-0.3 penalty
+            reward -= price_sanity_penalty
+            logger.debug(f"Excessive markup penalty: -{price_sanity_penalty:.3f} "
+                        f"({price_change_pct*100:.1f}% change, price {action:.2f} vs current {current_price:.2f})")
+        elif price_change_pct > 0.15:
+            # 15-30% markup is moderate
+            # Light penalty: 0.05 - 0.1 reward points
+            moderate_markup_penalty = (price_change_pct - 0.15) / 0.15  # 0-1 range for 15-30%
+            price_sanity_penalty = 0.1 * moderate_markup_penalty
+            reward -= price_sanity_penalty
+            logger.debug(f"Moderate markup penalty: -{price_sanity_penalty:.3f} "
+                        f"({price_change_pct*100:.1f}% change)")
+        
+        if price_change_pct < -0.20:
+            # More than 20% discount is risky
+            excessive_discount_penalty = min(abs(price_change_pct + 0.20) / 0.30, 1.0)
+            price_sanity_penalty = 0.2 * excessive_discount_penalty  # 0-0.2 penalty
+            reward -= price_sanity_penalty
+            logger.debug(f"Excessive discount penalty: -{price_sanity_penalty:.3f} ({price_change_pct*100:.1f}% change)")
+        
+        # Penalize prices below cost recovery
         cost_per_unit = transaction.get("cost_per_unit", 0.0)
-        if cost_per_unit > 0 and action < cost_per_unit * 0.9:
-            # Price below 90% of cost = loss
-            loss_penalty = self.price_sanity_weight * 0.5
+        if cost_per_unit > 0 and action < cost_per_unit * 0.95:
+            # Price below 95% of cost = significant loss
+            loss_penalty = 0.3  # HEAVY penalty for losses
             reward -= loss_penalty
-            logger.debug(f"Unsafe low price penalty: {loss_penalty:.3f} (price {action:.2f} vs cost {cost_per_unit:.2f})")
+            logger.debug(f"Unsafe low price penalty: -{loss_penalty:.3f} (price {action:.2f} vs cost {cost_per_unit:.2f})")
+        elif cost_per_unit > 0 and action < cost_per_unit:
+            # Price below cost = emergency situation
+            emergency_loss_penalty = 0.5  # VERY HEAVY penalty
+            reward -= emergency_loss_penalty
+            logger.debug(f"CRITICAL LOSS penalty: -{emergency_loss_penalty:.3f} (price {action:.2f} vs cost {cost_per_unit:.2f})")
         
         # Clip reward to [-1, 1]
         reward = np.clip(reward, -1.0, 1.0)

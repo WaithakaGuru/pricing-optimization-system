@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface UseAsyncState<T> {
   data: T | null;
@@ -6,40 +6,38 @@ interface UseAsyncState<T> {
   error: Error | null;
 }
 
-// interface UseAsyncOptions {
-//   onSuccess?: (data: any) => void;
-//   onError?: (error: Error) => void;
-// }
+interface UseAsyncOptions {
+  onError?: (error: Error) => void;
+}
 
 export function useAsync<T>(
   asyncFunction: () => Promise<T>,
   immediate = true,
-  deps: any[] = [],
-): UseAsyncState<T> {
+  options?: UseAsyncOptions,
+): UseAsyncState<T> & { refetch: () => Promise<void> } {
   const [state, setState] = useState<UseAsyncState<T>>({
     data: null,
     loading: immediate,
     error: null,
   });
 
-  const execute = async () => {
+  const execute = useCallback(async () => {
     setState({ data: null, loading: true, error: null });
     try {
-      const result = await asyncFunction();
-      setState({ data: result, loading: false, error: null });
-      return result;
+      const response = await asyncFunction();
+      setState({ data: response, loading: false, error: null });
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       setState({ data: null, loading: false, error: err });
-      throw err;
+      options?.onError?.(err);
     }
-  };
+  }, [asyncFunction, options]);
 
   useEffect(() => {
     if (immediate) {
       execute();
     }
-  }, deps);
+  }, [execute, immediate]);
 
-  return state;
+  return { ...state, refetch: execute };
 }

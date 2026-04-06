@@ -14,6 +14,7 @@ export interface PriceRecommendation {
   current_price: number;
   recommended_price: number;
   confidence: number;
+  agent: string;
   factors: Record<string, number | string>;
   timestamp: string;
 }
@@ -38,7 +39,7 @@ export interface InventoryItem {
   updated_at: string;
 }
 
-export type StockStatus = 'ok' | 'low' | 'critical' | 'overstock';
+export type StockStatus = "ok" | "low" | "critical" | "overstock";
 
 export interface TransactionItem {
   product_id: string;
@@ -61,4 +62,4 @@ export interface POSCartItem {
   price: number;
 }
 
-export type TimeRange = '7d' | '30d' | '90d';
+export type TimeRange = "7d" | "30d" | "90d";

@@ -1,15 +1,17 @@
 """Dashboard and metrics endpoints."""
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import List, Optional
+from pathlib import Path
 from services.inventory_service import InventoryService
 from services.pricing_service import PricingService
 from utils.logger import get_logger
 from models import get_session, Transaction, Product, PriceHistory, AgentMetrics
 
 logger = get_logger(__name__)
-router = APIRouter(prefix="/api/metrics", tags=["metrics"])
+router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 
 
 class DashboardMetric(BaseModel):
@@ -68,7 +70,7 @@ class PerformanceMetrics(BaseModel):
     last_training_date: Optional[str] = None
 
 
-@router.get("/dashboard", response_model=DashboardSummary)
+@router.get("", response_model=DashboardSummary)
 async def get_dashboard_summary(
     days: int = Query(30, ge=1, le=365, description="Days of history to include")
 ) -> DashboardSummary:
@@ -323,3 +325,420 @@ async def get_performance_metrics() -> PerformanceMetrics:
     except Exception as e:
         logger.error(f"Error getting performance metrics: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# MODEL COMPARISON AND EVALUATION ENDPOINTS
+# ============================================================================
+
+import json
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).parent.parent.parent
+EVAL_REPORT_PATH = BACKEND_DIR / "eval_report.json"
+REPORTS_DIR = BACKEND_DIR / "reports"
+
+
+def _load_eval_report() -> Optional[dict]:
+    """Load evaluation report from disk."""
+    if EVAL_REPORT_PATH.exists():
+        try:
+            with open(EVAL_REPORT_PATH, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.warning(f"Failed to load eval report: {e}")
+    return None
+
+
+@router.get("/models")
+async def get_models_dashboard() -> dict:
+    """
+    Get comprehensive model dashboard with all agent comparisons and metrics.
+    
+    Returns comprehensive evaluation data including:
+    - Agent rankings and performance metrics
+    - Training history and improvements
+    - Confidence levels and recommendations
+    - Deployment guidance
+    
+    Returns:
+        {
+            "status": "ready",
+            "timestamp": "2026-03-27T05:40:00",
+            "summary": {
+                "best_agent": "sac",
+                "best_reward": 156.29,
+                "agents_trained": 3,
+                "total_episodes": 1500
+            },
+            "agents": {
+                "sac": {...metrics...},
+                "ppo": {...metrics...},
+                "bandit": {...metrics...}
+            },
+            "recommendations": {...}
+        }
+    """
+    try:
+        eval_report = _load_eval_report()
+        
+        if not eval_report:
+            return {
+                "status": "no_evaluation",
+                "message": "Run eval_all_agents.py to generate evaluation report",
+                "next_steps": [
+                    "Train all models with train_all_models.py",
+                    "Generate evaluation report with eval_all_agents.py",
+                    "Check back for comprehensive dashboard"
+                ]
+            }
+        
+        logger.info("Models dashboard retrieved")
+        return eval_report
+        
+    except Exception as e:
+        logger.error(f"Error getting models dashboard: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/summary")
+async def get_models_summary() -> dict:
+    """
+    Get quick summary of model performance for dashboard cards.
+    
+    Returns quick performance metrics for each agent with status indicators.
+    """
+    try:
+        eval_report = _load_eval_report()
+        
+        if not eval_report:
+            raise HTTPException(
+                status_code=404,
+                detail="Evaluation report not found. Run eval_all_agents.py first."
+            )
+        
+        best_agent = eval_report.get("best_agent")
+        agent_comparison = eval_report.get("agent_comparison", {})
+        
+        # Build summary for each agent
+        agents_summary = {}
+        for agent_type, metrics in agent_comparison.items():
+            mean_reward = metrics.get("mean_reward", 0)
+            
+            # Assign status based on performance
+            if agent_type == best_agent:
+                status = "recommended"
+                color = "green"
+            elif mean_reward > 50:
+                status = "acceptable"
+                color = "blue"
+            else:
+                status = "fallback"
+                color = "orange"
+            
+            agents_summary[agent_type] = {
+                "reward": mean_reward,
+                "std": metrics.get("std_reward", 0),
+                "status": status,
+                "color": color,
+                "confidence": metrics.get("confidence", "unknown")
+            }
+        
+        logger.info("Models summary retrieved")
+        return {
+            "best_agent": best_agent,
+            "best_reward": agent_comparison.get(best_agent, {}).get("mean_reward", 0),
+            "agents": agents_summary,
+            "last_updated": eval_report.get("timestamp")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting models summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/comparison")
+async def get_models_comparison() -> dict:
+    """Get detailed model comparison for analysis views."""
+    try:
+        eval_report = _load_eval_report()
+        
+        if not eval_report:
+            raise HTTPException(status_code=404, detail="Evaluation report not found.")
+        
+        agent_comparison = eval_report.get("agent_comparison", {})
+        
+        # Enrich with qualitative analysis
+        qualitative_data = {
+            "sac": {
+                "type": "Soft Actor-Critic (Off-Policy)",
+                "strengths": [
+                    "Highest reward (156.29)",
+                    "Stable learning with entropy regularization",
+                    "Explores via temperature scaling",
+                    "Production-ready performance"
+                ],
+                "weaknesses": [
+                    "Requires more computational resources",
+                    "More hyperparameters to tune"
+                ],
+                "best_for": "Production pricing, complex decision spaces"
+            },
+            "ppo": {
+                "type": "Proximal Policy Optimization (On-Policy)",
+                "strengths": [
+                    "Strong performance (153.97 reward, 1.5% below SAC)",
+                    "Stable, reliable training",
+                    "Good for A/B testing",
+                    "Lower variance updates"
+                ],
+                "weaknesses": [
+                    "Slightly lower reward than SAC",
+                    "Less sample efficient than SAC"
+                ],
+                "best_for": "A/B testing, conservative adoption"
+            },
+            "bandit": {
+                "type": "Contextual Multi-Armed Bandit",
+                "strengths": [
+                    "Ultra-fast decisions (stateless)",
+                    "Simple, interpretable logic",
+                    "Good exploration-exploitation tradeoff"
+                ],
+                "weaknesses": [
+                    "Lowest reward (0.897)",
+                    "No true learning across episodes",
+                    "Limited context awareness"
+                ],
+                "best_for": "Fallback only, emergency pricing"
+            }
+        }
+        
+        comparison = {}
+        for agent_type, metrics in agent_comparison.items():
+            qual = qualitative_data.get(agent_type, {})
+            comparison[agent_type] = {
+                **metrics,
+                "type": qual.get("type"),
+                "strengths": qual.get("strengths", []),
+                "weaknesses": qual.get("weaknesses", []),
+                "best_for": qual.get("best_for", "")
+            }
+        
+        logger.info("Models comparison retrieved")
+        return {
+            "agents": comparison,
+            "timestamp": eval_report.get("timestamp"),
+            "recommendation": f"Deploy {eval_report.get('best_agent', 'sac').upper()} for production"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting models comparison: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/recommendations")
+async def get_deployment_recommendations() -> dict:
+    """Get deployment recommendations and next steps."""
+    try:
+        eval_report = _load_eval_report()
+        
+        if not eval_report:
+            raise HTTPException(status_code=404, detail="Evaluation report not found.")
+        
+        best_agent = eval_report.get("best_agent", "sac")
+        agent_comparison = eval_report.get("agent_comparison", {})
+        agents_ranked = sorted(
+            agent_comparison.items(),
+            key=lambda x: x[1].get("mean_reward", 0),
+            reverse=True
+        )
+        
+        logger.info("Deployment recommendations retrieved")
+        return {
+            "deployment": {
+                "primary": agents_ranked[0][0] if agents_ranked else best_agent,
+                "fallback": agents_ranked[1][0] if len(agents_ranked) > 1 else "ppo",
+                "emergency": agents_ranked[2][0] if len(agents_ranked) > 2 else "bandit"
+            },
+            "actions": [
+                {
+                    "priority": "high",
+                    "action": f"Deploy {agents_ranked[0][0].upper()}",
+                    "reason": f"Best performance ({agents_ranked[0][1].get('mean_reward', 0):.2f} reward)"
+                },
+                {
+                    "priority": "medium",
+                    "action": "Set up A/B testing with secondary agent",
+                    "reason": "Validate performance in production environment"
+                },
+                {
+                    "priority": "medium",
+                    "action": "Configure fallback chain",
+                    "reason": "Ensure graceful degradation if primary fails"
+                },
+                {
+                    "priority": "low",
+                    "action": "Schedule monthly retraining",
+                    "reason": "Keep models updated with new data"
+                }
+            ],
+            "monitoring": [
+                "Track actual price acceptance rate vs recommendations",
+                "Monitor reward drift (compare predicted vs actual revenue)",
+                "Check for inventory imbalances correlated with pricing",
+                "Alert if agent success rate drops below 90%",
+                "Weekly review of anomalies in price recommendations"
+            ],
+            "success_metrics": {
+                "primary": "Revenue increase > 5% vs baseline",
+                "secondary": "Price acceptance rate > 85%",
+                "tertiary": "Inventory turnover improvement > 3%"
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting recommendations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/health")
+async def dashboard_health() -> dict:
+    """Get dashboard health status."""
+    try:
+        components = {
+            "evaluation_report": EVAL_REPORT_PATH.exists(),
+            "visualizations": REPORTS_DIR.exists() and bool(list(REPORTS_DIR.glob("*.png"))),
+            "checkpoints": (BACKEND_DIR / "models" / "rl_checkpoints").exists(),
+            "api_server": True
+        }
+        
+        overall = "healthy" if all(components.values()) else "degraded"
+        
+        logger.info(f"Dashboard health: {overall}")
+        return {
+            "overall": overall,
+            "timestamp": datetime.now().isoformat(),
+            "components": components
+        }
+        
+    except Exception as e:
+        logger.error(f"Error checking dashboard health: {e}")
+        return {
+            "overall": "unhealthy",
+            "error": str(e)
+        }
+
+
+@router.get("/visualizations")
+async def list_visualizations() -> dict:
+    """
+    List all available visualization charts.
+    
+    Returns:
+        {
+            "charts": [
+                {
+                    "filename": "01_reward_comparison.png",
+                    "title": "Agent Reward Comparison",
+                    "description": "Bar chart comparing mean rewards across agents",
+                    "url": "/api/dashboard/visualizations/01_reward_comparison.png"
+                },
+                ...
+            ]
+        }
+    """
+    try:
+        if not REPORTS_DIR.exists():
+            return {"charts": [], "message": "No visualizations available yet"}
+        
+        chart_info = {
+            "01_reward_comparison.png": {
+                "title": "Agent Reward Comparison",
+                "description": "Mean rewards with error bars for each agent"
+            },
+            "02_efficiency_scatter.png": {
+                "title": "Training Efficiency",
+                "description": "Training time vs reward achieved (Pareto frontier)"
+            },
+            "03_characteristics_radar.png": {
+                "title": "Agent Characteristics",
+                "description": "Multi-dimensional comparison (speed, stability, sample efficiency, etc.)"
+            },
+            "04_recommendation_card.png": {
+                "title": "Deployment Recommendation",
+                "description": "Summary card with recommended agent and next steps"
+            }
+        }
+        
+        charts = []
+        for filename, info in chart_info.items():
+            filepath = REPORTS_DIR / filename
+            if filepath.exists():
+                charts.append({
+                    "filename": filename,
+                    "title": info["title"],
+                    "description": info["description"],
+                    "url": f"/api/dashboard/visualizations/{filename}",
+                    "size_kb": filepath.stat().st_size / 1024
+                })
+        
+        logger.info(f"Listed {len(charts)} visualizations")
+        return {"charts": charts}
+        
+    except Exception as e:
+        logger.error(f"Error listing visualizations: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/visualizations/{filename}")
+async def get_visualization(filename: str) -> FileResponse:
+    """
+    Serve visualization PNG files.
+    
+    - **filename**: Name of the chart file (e.g., "01_reward_comparison.png")
+    
+    Returns the PNG image file with appropriate headers.
+    """
+    try:
+        # Validate filename to prevent directory traversal
+        allowed_files = {
+            "01_reward_comparison.png",
+            "02_efficiency_scatter.png",
+            "03_characteristics_radar.png",
+            "04_recommendation_card.png"
+        }
+        
+        if filename not in allowed_files:
+            raise HTTPException(status_code=404, detail=f"Chart not found: {filename}")
+        
+        filepath = REPORTS_DIR / filename
+        
+        if not filepath.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Visualization not generated yet: {filename}. Run eval_all_agents.py to generate."
+            )
+        
+        if not filepath.is_file():
+            raise HTTPException(status_code=400, detail=f"Invalid file: {filename}")
+        
+        logger.info(f"Serving visualization: {filename}")
+        return FileResponse(
+            filepath,
+            media_type="image/png",
+            filename=filename,
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving visualization {filename}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error serving visualization: {str(e)}")

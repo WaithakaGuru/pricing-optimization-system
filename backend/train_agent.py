@@ -51,7 +51,8 @@ def train_rl_agent_episodic(
     logger.info("=" * 70)
     
     # Initialize environment
-    env = PriceOptimizationEnv()
+    # Use valid product ID from database (p0001, p0002, ..., p0100)
+    env = PriceOptimizationEnv(product_id="p0001")
     
     # Initialize agent
     if agent_type.upper() == "PPO":

@@ -37,7 +37,7 @@ class PriceOptimizationEnv(gym.Env):
 
     def __init__(
         self,
-        product_id: str = "PROD-001",
+        product_id: str = "p0001",
         config: dict = None,
         db_url: str = "sqlite:///pricing.db",
         max_steps: int = 252,  # ~1 trading year

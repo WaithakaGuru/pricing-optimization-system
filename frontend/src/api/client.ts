@@ -34,13 +34,10 @@ export const pricesApi = {
 
 export const inventoryApi = {
   list: () => req<InventoryItem[]>("/api/inventory/items"),
-  update: (productId: string, newQuantity: number, oldQuantity: number) =>
+  update: (productId: string, quantity: number) =>
     req<InventoryItem>(`/api/inventory/items/${productId}`, {
       method: "PUT",
-      body: JSON.stringify({
-        quantity_change: newQuantity - oldQuantity,
-        reason: "adjustment",
-      }),
+      body: JSON.stringify({ quantity }),
     }),
   alerts: () => req<InventoryItem[]>("/api/inventory/alerts"),
 };
@@ -58,30 +55,4 @@ export const posApi = {
 
 export const productsApi = {
   list: () => req<Product[]>("/api/products"),
-  create: (data: {
-    id: string;
-    name: string;
-    cost_price: number;
-    min_price: number;
-    max_price: number;
-    current_price: number;
-    initial_quantity: number;
-    reorder_point: number;
-    reorder_quantity: number;
-    warehouse_location: string;
-  }) =>
-    req<Product>("/api/products", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-};
-
-export const dashboardApi = {
-  summary: (days = 30) => req<any>(`/api/metrics/dashboard?days=${days}`),
-};
-
-export const analyticsApi = {
-  revenueData: (days = 30) => req<any[]>(`/api/analytics/revenue?days=${days}`),
-  categoryData: () => req<any[]>("/api/analytics/categories"),
-  recommendations: () => req<any[]>("/api/analytics/recommendations"),
 };

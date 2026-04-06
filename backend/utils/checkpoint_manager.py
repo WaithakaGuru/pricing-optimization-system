@@ -269,28 +269,35 @@ def cleanup_weaker_checkpoints(
     return deleted_count, len(checkpoints) - deleted_count
 
 
-def cleanup_all_weaker_checkpoints(keep_top_n: int = 3) -> Dict[str, Tuple[int, int]]:
+def cleanup_all_weaker_checkpoints(keep_top_n: int = 3, agent_type: str = None) -> Tuple[int, int]:
     """
-    Clean up weaker checkpoints for all agent types.
+    Clean up weaker checkpoints for specified agent type(s).
     
     Args:
         keep_top_n: Number of best checkpoints to keep per agent
+        agent_type: Specific agent type to clean (None = all agents)
     
     Returns:
-        Dictionary with cleanup stats per agent type
+        Tuple of (total_deleted, total_remaining) across specified agents
     """
     logger.info(f"\n🧹 Cleaning up checkpoints (keeping top {keep_top_n} per agent)...")
     
     checkpoints = list_checkpoints()
-    results = {}
     
-    for agent_type in ["ppo", "sac", "bandit"]:
-        if agent_type in checkpoints and len(checkpoints[agent_type]) > 0:
-            deleted, remaining = cleanup_weaker_checkpoints(agent_type, keep_top_n)
-            results[agent_type] = (deleted, remaining)
-            logger.info(f"  {agent_type.upper()}: Deleted {deleted}, Remaining {remaining}")
+    # Determine which agents to process
+    agents_to_process = [agent_type] if agent_type else ["ppo", "sac", "bandit"]
     
-    return results
+    total_deleted = 0
+    total_remaining = 0
+    
+    for agent in agents_to_process:
+        if agent in checkpoints and len(checkpoints[agent]) > 0:
+            deleted, remaining = cleanup_weaker_checkpoints(agent, keep_top_n)
+            total_deleted += deleted
+            total_remaining += remaining
+            logger.info(f"  {agent.upper()}: Deleted {deleted}, Remaining {remaining}")
+    
+    return (total_deleted, total_remaining)
 
 
 def print_checkpoint_summary() -> None:

@@ -43,3 +43,7 @@ def create_app() -> FastAPI:
         return {"message": "Price Optimizer API"}
 
     return app
+
+
+# Create app instance for uvicorn
+app = create_app()

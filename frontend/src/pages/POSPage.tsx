@@ -196,7 +196,7 @@ export default function POSPage() {
           className="grid gap-4 flex-1"
           style={{ gridTemplateColumns: "1fr 320px" }}
         >
-          <div className="min-h-120 relative overflow-hidden flex flex-col bg-surface] border border-border rounded-2xl shadow-xs p-4">
+          <div className="max-h-180 relative overflow-y-auto flex flex-col bg-surface] border border-border rounded-2xl shadow-xs p-4">
             <ProductGrid
               products={products}
               onAdd={(p: Product) => addItem(p)}
