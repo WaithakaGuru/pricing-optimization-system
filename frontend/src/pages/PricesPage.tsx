@@ -9,24 +9,24 @@ type AgentType = "sac" | "ppo" | "bandit";
 // Skeleton Loader Component
 function ProductCardSkeleton() {
   return (
-    <div className="p-4 rounded-xl bg-[--color-surface] border border-[--color-border] animate-pulse">
+    <div className="p-4 rounded-xl bg-surface border border-border animate-pulse">
       <div className="mb-3">
-        <div className="h-4 bg-[--color-surface-2] rounded w-3/4 mb-2" />
-        <div className="h-3 bg-[--color-surface-2] rounded w-1/3" />
+        <div className="h-4 bg-surface-2 rounded w-3/4 mb-2" />
+        <div className="h-3 bg-surface-2 rounded w-1/3" />
       </div>
       <div className="space-y-2 mb-3">
         <div className="flex items-center justify-between">
-          <div className="h-3 bg-[--color-surface-2] rounded w-1/4" />
-          <div className="h-3 bg-[--color-surface-2] rounded w-1/5" />
+          <div className="h-3 bg-surface-2 rounded w-1/4" />
+          <div className="h-3 bg-surface-2 rounded w-1/5" />
         </div>
         <div className="flex items-center justify-between">
-          <div className="h-3 bg-[--color-surface-2] rounded w-1/4" />
-          <div className="h-3 bg-[--color-surface-2] rounded w-1/5" />
+          <div className="h-3 bg-surface-2 rounded w-1/4" />
+          <div className="h-3 bg-surface-2 rounded w-1/5" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[--color-border]">
-        <div className="h-3 bg-[--color-surface-2] rounded" />
-        <div className="h-3 bg-[--color-surface-2] rounded" />
+      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
+        <div className="h-3 bg-surface-2 rounded" />
+        <div className="h-3 bg-surface-2 rounded" />
       </div>
     </div>
   );
@@ -127,7 +127,7 @@ export default function PricesPage() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-[--color-text-primary]">
+        <h1 className="text-3xl font-bold text-text-primary">
           Price Recommendations
         </h1>
       </div>
@@ -137,7 +137,7 @@ export default function PricesPage() {
         {/* Search Bar */}
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-[--color-text-tertiary]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
             width="16"
             height="16"
             viewBox="0 0 24 24"
@@ -153,7 +153,7 @@ export default function PricesPage() {
             placeholder="Search products..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2.5 bg-[--color-surface] border border-[--color-border] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[--color-accent] text-[--color-text-primary]"
+            className="w-full pl-9 pr-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent text-text-primary"
           />
         </div>
 
@@ -161,7 +161,7 @@ export default function PricesPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
-          className="px-3 py-2.5 bg-[--color-surface] border border-[--color-border] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[--color-accent] text-[--color-text-primary]"
+          className="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent text-text-primary"
         >
           <option value="change">Largest Change</option>
           <option value="confidence">Highest Confidence</option>
@@ -173,7 +173,7 @@ export default function PricesPage() {
         <select
           value={agent}
           onChange={(e) => setAgent(e.target.value as AgentType)}
-          className="px-3 py-2.5 bg-[--color-surface] border border-[--color-border] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[--color-accent] text-[--color-text-primary]"
+          className="px-3 py-2.5 bg-surface border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent text-text-primary"
         >
           <option value="sac">SAC Agent</option>
           <option value="ppo">PPO Agent</option>
@@ -181,7 +181,7 @@ export default function PricesPage() {
         </select>
 
         {/* Count */}
-        <div className="flex items-center justify-center px-3 py-2.5 bg-[--color-surface-2] border border-[--color-border] rounded-lg text-sm text-[--color-text-secondary]">
+        <div className="flex items-center justify-center px-3 py-2.5 bg-surface-2 border border-border rounded-lg text-sm text-text-secondary">
           {filtered.length} product{filtered.length !== 1 ? "s" : ""}
         </div>
       </div>
@@ -195,9 +195,7 @@ export default function PricesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-[--color-text-tertiary]">
-            No products match your search
-          </p>
+          <p className="text-text-tertiary">No products match your search</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -215,34 +213,28 @@ export default function PricesPage() {
                 onClick={() => setSelectedProduct(product.id)}
                 className={`p-4 rounded-xl transition-all text-left ${
                   selectedProduct === product.id
-                    ? "bg-[--color-accent-light] border-2 border-[--color-accent] shadow-md"
-                    : "bg-[--color-surface] border border-[--color-border] hover:border-[--color-accent] hover:shadow-md"
+                    ? "bg-accent-light border-2 border-accent shadow-md"
+                    : "bg-surface border border-border hover:border-accent hover:shadow-md"
                 }`}
               >
                 {/* Product Name and ID */}
                 <div className="mb-3">
-                  <h3 className="font-semibold text-[--color-text-primary] truncate">
+                  <h3 className="font-semibold text-text-primary truncate">
                     {product.name}
                   </h3>
-                  <p className="text-xs text-[--color-text-tertiary]">
-                    {product.id}
-                  </p>
+                  <p className="text-xs text-text-tertiary">{product.id}</p>
                 </div>
 
                 {/* Price Comparison */}
                 <div className="space-y-2 mb-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[--color-text-tertiary]">
-                      Current
-                    </span>
-                    <span className="font-medium text-[--color-text-primary]">
+                    <span className="text-xs text-text-tertiary">Current</span>
+                    <span className="font-medium text-text-primary">
                       ${rec.current_price.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-[--color-accent]">
-                      Recommended
-                    </span>
+                    <span className="text-xs text-accent">Recommended</span>
                     <span
                       className={`font-semibold ${
                         isPositive ? "text-green-600" : "text-amber-600"
@@ -254,11 +246,9 @@ export default function PricesPage() {
                 </div>
 
                 {/* Change and Confidence */}
-                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[--color-border]">
+                <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
                   <div>
-                    <p className="text-xs text-[--color-text-tertiary]">
-                      Change
-                    </p>
+                    <p className="text-xs text-text-tertiary">Change</p>
                     <p
                       className={`text-sm font-semibold ${
                         isPositive ? "text-green-600" : "text-amber-600"
@@ -269,10 +259,8 @@ export default function PricesPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-[--color-text-tertiary]">
-                      Confidence
-                    </p>
-                    <p className="text-sm font-semibold text-[--color-accent]">
+                    <p className="text-xs text-text-tertiary">Confidence</p>
+                    <p className="text-sm font-semibold text-accent">
                       {(rec.confidence * 100).toFixed(0)}%
                     </p>
                   </div>
@@ -285,41 +273,41 @@ export default function PricesPage() {
 
       {/* Detailed View */}
       {selectedData && selectedData.recommendation && (
-        <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl shadow-xs p-6 mt-6">
-          <h2 className="text-xl font-semibold text-[--color-text-primary] mb-6">
+        <div className="bg-surface border border-border rounded-2xl shadow-xs p-6 mt-6">
+          <h2 className="text-xl font-semibold text-text-primary mb-6">
             {selectedData.name} - Detailed Analysis
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-[--color-surface-2] rounded-lg p-4 text-center">
-              <div className="text-xs uppercase tracking-widest text-[--color-text-tertiary] mb-1">
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
                 Current Price
               </div>
-              <div className="text-2xl font-bold text-[--color-text-primary]">
+              <div className="text-2xl font-bold text-text-primary">
                 ${selectedData.recommendation.current_price.toFixed(2)}
               </div>
             </div>
-            <div className="bg-[--color-accent-light]/50 rounded-lg p-4 text-center">
-              <div className="text-xs uppercase tracking-widest text-[--color-accent] mb-1">
+            <div className="bg-accent-light/50 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-accent mb-1">
                 Recommended
               </div>
-              <div className="text-2xl font-bold text-[--color-accent]">
+              <div className="text-2xl font-bold text-accent">
                 ${selectedData.recommendation.recommended_price.toFixed(2)}
               </div>
             </div>
-            <div className="bg-[--color-surface-2] rounded-lg p-4 text-center">
-              <div className="text-xs uppercase tracking-widest text-[--color-text-tertiary] mb-1">
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
                 Agent
               </div>
-              <div className="text-lg font-semibold text-[--color-text-primary]">
+              <div className="text-lg font-semibold text-text-primary">
                 {selectedData.recommendation.agent.toUpperCase()}
               </div>
             </div>
-            <div className="bg-[--color-surface-2] rounded-lg p-4 text-center">
-              <div className="text-xs uppercase tracking-widest text-[--color-text-tertiary] mb-1">
+            <div className="bg-surface-2 rounded-lg p-4 text-center">
+              <div className="text-xs uppercase tracking-widest text-text-tertiary mb-1">
                 Confidence
               </div>
-              <div className="text-2xl font-bold text-[--color-text-primary]">
+              <div className="text-2xl font-bold text-text-primary">
                 {(selectedData.recommendation.confidence * 100).toFixed(0)}%
               </div>
             </div>
@@ -327,18 +315,18 @@ export default function PricesPage() {
 
           {/* Factors */}
           {Object.keys(selectedData.recommendation.factors).length > 0 && (
-            <div className="bg-[--color-surface-2] rounded-lg p-4">
-              <h3 className="text-sm font-semibold uppercase tracking-widest text-[--color-text-tertiary] mb-3">
+            <div className="bg-surface-2 rounded-lg p-4">
+              <h3 className="text-sm font-semibold uppercase tracking-widest text-text-tertiary mb-3">
                 Decision Factors
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {Object.entries(selectedData.recommendation.factors).map(
                   ([key, value]) => (
                     <div key={key}>
-                      <p className="text-xs text-[--color-text-tertiary] capitalize mb-1">
+                      <p className="text-xs text-text-tertiary capitalize mb-1">
                         {key.replace(/_/g, " ")}
                       </p>
-                      <p className="text-sm font-semibold text-[--color-text-primary]">
+                      <p className="text-sm font-semibold text-text-primary">
                         {String(value)}
                       </p>
                     </div>

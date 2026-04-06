@@ -25,7 +25,7 @@ export default function CartPanel({
   const tax = total * 0.16;
 
   return (
-    <div className="bg-surface] border border-border rounded-2xl flex flex-col h-full shadow-sm overflow-hidden">
+    <div className="bg-surface border border-border rounded-2xl flex flex-col h-full shadow-sm overflow-y-auto min-h-120">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
         <h2 className="text-sm font-semibold text-text-primary">
