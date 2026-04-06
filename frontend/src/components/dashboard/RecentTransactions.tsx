@@ -11,7 +11,7 @@ export default function RecentTransactions({
 }: Props) {
   if (loading && transactions.length === 0) {
     return (
-      <div className="bg-[--color-surface] border border-border rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden">
         <div className="px-6 py-5 flex items-center justify-center h-40">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-accent"></div>
         </div>
@@ -20,7 +20,7 @@ export default function RecentTransactions({
   }
 
   return (
-    <div className="bg-[--color-surface] border border-border rounded-2xl shadow-xs overflow-hidden flex flex-col">
+    <div className="bg-surface border border-border rounded-2xl shadow-xs overflow-hidden flex flex-col">
       <div className="flex items-center justify-between px-6 py-5 border-b border-border shrink-0">
         <h2 className="text-sm font-semibold text-text-primary">
           Recent Transactions
@@ -51,7 +51,7 @@ export default function RecentTransactions({
             return (
               <div
                 key={t.id}
-                className="flex items-center gap-3 px-6 py-2.5 border-b border-border last:border-0 hover:bg-[--color-surface-2] transition-colors animate-fade-up"
+                className="flex items-center gap-3 px-6 py-2.5 border-b border-border last:border-0 hover:bg-surface-2 transition-colors animate-fade-up"
                 style={{ animationDelay: `${i * 35}ms` }}
               >
                 <div className="w-8 h-8 rounded-lg bg-accent-light text-accent flex items-center justify-center shrink-0">
