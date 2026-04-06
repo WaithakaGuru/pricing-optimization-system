@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { productsApi } from "../../api/client";
 
 interface ProductFormProps {
   onSuccess?: () => void;
@@ -78,19 +79,19 @@ export default function ProductForm({ onSuccess, onCancel }: ProductFormProps) {
         throw new Error("Current price must be between min and max price");
       }
 
-      // Call API (endpoint not yet implemented)
-      // await productsApi.create({
-      //   id: formData.id,
-      //   name: formData.name,
-      //   cost_price: costPrice,
-      //   min_price: minPrice,
-      //   max_price: maxPrice,
-      //   current_price: currentPrice,
-      //   initial_quantity: quantity,
-      //   reorder_point: reorderPoint,
-      //   reorder_quantity: reorderQty,
-      //   warehouse_location: formData.warehouse_location,
-      // });
+      // Call API to create product
+      await productsApi.create({
+        id: formData.id,
+        name: formData.name,
+        cost_price: costPrice,
+        min_price: minPrice,
+        max_price: maxPrice,
+        current_price: currentPrice,
+        initial_quantity: quantity,
+        reorder_point: reorderPoint,
+        reorder_quantity: reorderQty,
+        warehouse_location: formData.warehouse_location,
+      });
 
       setSuccess(true);
       setFormData({

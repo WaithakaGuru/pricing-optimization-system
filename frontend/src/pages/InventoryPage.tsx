@@ -54,9 +54,23 @@ export default function InventoryPage() {
     {} as Record<Filter, number>,
   );
 
-  function handleSave() {
-    refetch();
-    setEditing(null);
+  async function handleSave(
+    productId: string,
+    newQty: number,
+    oldQty?: number,
+  ) {
+    try {
+      // Calculate the change (delta) from old quantity to new quantity
+      const quantityChange = oldQty !== undefined ? newQty - oldQty : newQty;
+      await inventoryApi.update(productId, quantityChange);
+      refetch();
+      setEditing(null);
+    } catch (err) {
+      console.error("Error updating inventory:", err);
+      alert(
+        `Failed to adjust inventory: ${err instanceof Error ? err.message : "Unknown error"}`,
+      );
+    }
   }
 
   if (error && items.length === 0) {

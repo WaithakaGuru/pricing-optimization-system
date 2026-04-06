@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseAsyncState<T> {
   data: T | null;
@@ -21,17 +21,26 @@ export function useAsync<T>(
     error: null,
   });
 
+  // Use refs to avoid infinite loops - update refs but don't trigger re-renders
+  const functionRef = useRef(asyncFunction);
+  const optionsRef = useRef(options);
+
+  // Update refs without changing identity or triggering effects
+  functionRef.current = asyncFunction;
+  optionsRef.current = options;
+
   const execute = useCallback(async () => {
     setState({ data: null, loading: true, error: null });
     try {
-      const response = await asyncFunction();
+      // Use current values from refs, not closure values
+      const response = await functionRef.current();
       setState({ data: response, loading: false, error: null });
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       setState({ data: null, loading: false, error: err });
-      options?.onError?.(err);
+      optionsRef.current?.onError?.(err);
     }
-  }, [asyncFunction, options]);
+  }, []); // Empty dependencies - function doesn't change
 
   useEffect(() => {
     if (immediate) {

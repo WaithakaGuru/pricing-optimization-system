@@ -1,13 +1,15 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
-import { generateCategoryData } from "../../api/mock";
 
-export default function CategoryChart() {
-  const data = generateCategoryData();
+interface CategoryChartProps {
+  data?: Array<{ name: string; value: number; color: string }>;
+}
+
+export default function CategoryChart({ data = [] }: CategoryChartProps) {
   const total = data.reduce((s, d) => s + d.value, 0);
 
   return (
-    <div className="bg-[--color-surface] border border-[--color-border] rounded-2xl p-6 shadow-xs h-full">
-      <h2 className="text-sm font-semibold text-[--color-text-primary] mb-5">
+    <div className="bg-surface border border-border rounded-2xl p-6 shadow-xs h-full">
+      <h2 className="text-sm font-semibold text-text-primary mb-5">
         Revenue by Category
       </h2>
       <div className="flex items-center gap-5">
@@ -28,7 +30,7 @@ export default function CategoryChart() {
             </Pie>
             <Tooltip
               formatter={(val) => [
-                `${((Number(val) / total) * 100).toFixed(0)}%`,
+                `$${(Number(val) || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}`,
                 "",
               ]}
               contentStyle={{
@@ -47,11 +49,16 @@ export default function CategoryChart() {
                 className="w-2 h-2 rounded-full shrink-0"
                 style={{ background: d.color }}
               />
-              <span className="flex-1 text-xs text-[--color-text-secondary]">
+              <span className="flex-1 text-xs text-text-secondary">
                 {d.name}
               </span>
-              <span className="text-xs font-semibold text-[--color-text-primary] font-mono">
-                {d.value}%
+              <span className="text-xs font-semibold text-text-primary font-mono">
+                $
+                {typeof d.value === "string"
+                  ? d.value
+                  : d.value.toLocaleString("en-US", {
+                      maximumFractionDigits: 0,
+                    })}
               </span>
             </div>
           ))}

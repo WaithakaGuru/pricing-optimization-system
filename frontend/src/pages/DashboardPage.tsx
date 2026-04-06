@@ -1,6 +1,6 @@
 import { useAsync } from "../hooks";
 import { posApi } from "../api/client";
-import { MOCK_PRODUCTS, MOCK_TRANSACTIONS } from "../api/mock";
+import { MOCK_TRANSACTIONS } from "../api/mock";
 import StatCard from "../components/dashboard/StatCard";
 import RevenueChart from "../components/dashboard/RevenueChart";
 import CategoryChart from "../components/dashboard/CategoryChart";
@@ -24,22 +24,27 @@ export default function DashboardPage() {
     true,
   );
 
+  const { data: revenueData } = useAsync(
+    () => posApi.revenueData(30).catch(() => []),
+    true,
+  );
+
+  const { data: categoryData } = useAsync(
+    () => posApi.categoryData(30).catch(() => []),
+    true,
+  );
+
+  const { data: recommendationsData } = useAsync(
+    () => posApi.recommendations().catch(() => []),
+    true,
+  );
+
   const currentStats = stats || {
     revenue_today: 3842,
     transactions: 147,
     avg_order_value: 26.14,
     gross_margin: 54.8,
   };
-
-  const recommendations = MOCK_PRODUCTS.slice(0, 3).map((p) => ({
-    product_id: p.id,
-    current_price: p.current_price,
-    recommended_price: p.current_price * (0.95 + Math.random() * 0.1),
-    confidence: 0.75 + Math.random() * 0.2,
-    agent: "sac",
-    factors: { demand: "High", seasonality: "Positive" },
-    timestamp: new Date().toISOString(),
-  }));
 
   return (
     <div className="flex flex-col gap-6 max-w-360">
@@ -78,13 +83,13 @@ export default function DashboardPage() {
 
       {/* Charts row */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 320px" }}>
-        <RevenueChart />
-        <CategoryChart />
+        <RevenueChart data={revenueData ?? []} />
+        <CategoryChart data={categoryData ?? []} />
       </div>
 
       {/* Bottom row */}
       <div className="grid gap-4" style={{ gridTemplateColumns: "1fr 360px" }}>
-        <PriceRecommendations recommendations={recommendations} />
+        <PriceRecommendations recommendations={recommendationsData ?? []} />
         <RecentTransactions
           transactions={transactions || MOCK_TRANSACTIONS.slice(0, 10)}
         />

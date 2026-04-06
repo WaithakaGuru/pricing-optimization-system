@@ -586,7 +586,7 @@ export function AgentDashboardPage() {
                     >
                       <input
                         type="checkbox"
-                        className="w-4 h-4 rounded border-gray-300 mt-0.5 flex-shrink-0"
+                        className="w-4 h-4 rounded border-gray-300 mt-0.5 shrink-0"
                         disabled
                       />
                       <span>{point}</span>

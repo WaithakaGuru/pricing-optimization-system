@@ -45,6 +45,30 @@ export default function POSPage() {
     return () => {};
   }, []);
 
+  // Track cart changes and send to backend
+  // useEffect(() => {
+  //   const updateCartOnBackend = async () => {
+  //     if (items.length === 0) return;
+
+  //     try {
+  //       await posApi.updateCart(
+  //         items.map((item) => ({
+  //           product_id: item.product_id,
+  //           quantity: item.quantity,
+  //           price: item.price,
+  //         }))
+  //       );
+  //     } catch (err) {
+  //       console.warn("Failed to sync cart to backend:", err);
+  //       // Don't block UI if sync fails, but log it
+  //     }
+  //   };
+
+  //   // Debounce cart updates - only sync after 500ms of no changes
+  //   const timer = setTimeout(updateCartOnBackend, 500);
+  //   return () => clearTimeout(timer);
+  // }, [items]);
+
   const isToday = (ts: string) =>
     new Date(ts).toDateString() === new Date().toDateString();
   const todayTxns = txns.filter((t) => isToday(t.timestamp));
